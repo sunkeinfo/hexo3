@@ -1,5 +1,6 @@
 
-hy2://8d2dc493@3.39.191.11:31463?insecure=1&sni=www.bing.com#Hysteria2-misaka-KR
+
+hysteria2://0c712f1d@3.36.53.77:23927/?insecure=1&sni=www.bing.com#Hysteria2-misaka-KR
 
 
 hy2://a9b0219b@34.217.233.52:24915?insecure=1&sni=www.bing.com#Hysteria2-misaka-OR
