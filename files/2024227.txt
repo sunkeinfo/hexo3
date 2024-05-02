@@ -3,8 +3,5 @@
 hysteria2://0c712f1d@3.36.53.77:23927/?insecure=1&sni=www.bing.com#Hysteria2-misaka-KR
 
 
-hy2://a9b0219b@34.217.233.52:24915?insecure=1&sni=www.bing.com#Hysteria2-misaka-OR
-
-vless://a0f5b724-21ec-f2fd-d914-1b530d03e6a8@vw.vwvwvw.xyz:12123?path=%2Fvwws&security=tls&encryption=none&host=vw.vwvwvw.xyz&type=ws&sni=vw.vwvwvw.xyz#%E6%B4%9B%E6%9D%89%E7%9F%B6
-
-vless://b41caa52-c563-49c3-848a-b9e21245d905@us01.vypran.com:32970?type=tcp&security=xtls&flow=xtls-rprx-direct#mtproto.cc
+hy2://772e9ef2@13.114.132.132:27908?insecure=1&sni=www.bing.com#Hysteria2-misaka--JP
+vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@13.114.132.132:1114?security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=/&type=tcp&flow=xtls-rprx-vision&encryption=none#1114-j6v0t7rd--JP
