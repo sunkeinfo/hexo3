@@ -9,3 +9,4 @@ hy2://2f14ef8c@3.128.94.143:56433?insecure=1&sni=www.bing.com#Hysteria2-US--vles
 vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@3.112.196.189:1114?security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=/&type=tcp&flow=xtls-rprx-vision&encryption=none#1114-JP--darr.yltanners.n@gmail.com
 hysteria2://976e7af6@3.112.196.189:53107/?insecure=1&sni=www.bing.com#Hysteria2-misaka--JP--darr.yltanners.n@gmail.com
 vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@13.250.34.92:1114?security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=/&type=tcp&flow=xtls-rprx-vision&encryption=none#1114-SG--13.250.34.92
+vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@15.188.84.245:1114?security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=/&type=tcp&flow=xtls-rprx-vision&encryption=none#1114-France--Lightsail--yahoo
