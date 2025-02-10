@@ -1,6 +1,6 @@
 hysteria2://f26db7dd@54.180.230.185:63448/?insecure=1&sni=www.bing.com#--KR--Hysteria2-misaka
 
-vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@54.180.230.185:1114?encryption=none&flow=xtls-rprx-vision&security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=%2F&type=tcp&headerType=none#1114-j6v0t7rd--UK
+vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@54.180.230.185:1114?encryption=none&flow=xtls-rprx-vision&security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=%2F&type=tcp&headerType=none#1114-j6v0t7rd--KR
 
 
 vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@35.159.66.181:1114?security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=/&type=tcp&flow=xtls-rprx-vision&encryption=none#1114-DE---Germany
