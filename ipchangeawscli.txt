@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Define variables
+INSTANCE_ID="i-041888c7f28b21574"
+ELASTIC_IP="18.180.76.38"
+REGION="ap-northeast-1" # Tokyo region
+
+# Associate the Elastic IP address with the instance
+echo "Associating Elastic IP $ELASTIC_IP with instance $INSTANCE_ID..."
+aws ec2 associate-address --instance-id $INSTANCE_ID --public-ip $ELASTIC_IP --region $REGION
+
+# Check if the association was successful
+if [ $? -ne 0 ]; then
+  echo "Failed to associate Elastic IP. Exiting."
+  exit 1
+fi
+
+echo "Association successful. Waiting 10 seconds..."
+sleep 10
+
+# Disassociate the Elastic IP address
+echo "Disassociating Elastic IP $ELASTIC_IP..."
+aws ec2 disassociate-address --public-ip $ELASTIC_IP --region $REGION
+
+# Check if the disassociation was successful
+if [ $? -ne 0 ]; then
+  echo "Failed to disassociate Elastic IP. Exiting."
+  exit 1
+fi
+
+echo "Elastic IP $ELASTIC_IP disassociated successfully."
+
+exit 0
