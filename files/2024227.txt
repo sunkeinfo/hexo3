@@ -3,4 +3,4 @@ vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@13.222.220.44:1114?security=reality
 vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@2600:1f18:25eb:9400:4984:e7f2:79d1:2a3:1114?security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=/&type=tcp&flow=xtls-rprx-vision&encryption=none#1114-V6美国F.r.es.hvv@gmail.com -2
 vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@54.172.179.47:1114?security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=/&type=tcp&flow=xtls-rprx-vision&encryption=none#1114-V4美国F.r.es.hvv@gmail.com -
 vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@2600:1f18:25eb:9400:10b3:afdd:dc9b:7a13:1114?security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=/&type=tcp&flow=xtls-rprx-vision&encryption=none#1114-V4美国F.r.es.hvv@gmail.com -
-vless://d790096c-e50a-4c24-a66a-794d84dac66f@44.203.125.221:443?security=reality&flow=xtls-rprx-vision&fp=chrome&pbk=Z1CVGzlnkXKP3nSVowGQy96k3Cg-kpVCAdI6cVoeVwU&sni=learn.microsoft.com&spx=/&type=tcp&sid=0a#NV-US-美国弗吉尼亚443reality
+
