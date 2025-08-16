@@ -1,66 +1,66 @@
 #!/bin/bash
 
-# 这个脚本用于创建一个新的 AWS Organizations 账户。
-# 它会自动将账户名设置为电子邮件地址中 @ 符号之前的部分。
+# This script creates a new AWS Organizations account.
+# It automatically uses the part of the email address before the "@" as the account name.
 #
-# 用法:
-#   curl -sL https://raw.githubusercontent.com/your-username/your-repo/main/create-org-account-simple.sh | bash -s --dev-team@example.com
+# Usage:
+#   curl -sL https://raw.githubusercontent.com/your-username/your-repo/main/create-org-account.sh | bash -s -- "your-email@example.com"
 #
-# 确保你已正确配置了 AWS CLI 的权限，并且系统中已安装 'jq' 工具。
+# Ensure you have the necessary AWS CLI permissions and have 'jq' installed.
 
-# 检查参数是否正确，并提取电子邮件
-if [ -z "$1" ] || [[ ! "$1" =~ ^-- ]]; then
-  echo "错误: 未提供正确的电子邮件地址格式。"
-  echo "用法: $0 --your-email@example.com"
+# Check if an email address was provided as an argument
+if [ -z "$1" ]; then
+  echo "Error: No email address was provided."
+  echo "Usage: $0 \"your-email@example.com\""
   exit 1
 fi
 
-# 从第一个参数中移除前缀 "--"
-EMAIL="${1:2}"
+EMAIL="$1"
 
-# 从电子邮件地址中提取账户名
+# Extract the account name from the email address
 ACCOUNT_NAME=$(echo "$EMAIL" | cut -d'@' -f1)
 
-# 一个简单的检查，确保账户名不为空
+# A simple check to ensure the account name is not empty
 if [ -z "$ACCOUNT_NAME" ]; then
-  echo "错误: 无法从电子邮件地址中获取账户名。"
+  echo "Error: The account name could not be extracted from the email address."
   exit 1
 fi
 
-echo "正在尝试创建新的 AWS Organizations 账户..."
-echo "账户名: ${ACCOUNT_NAME}"
-echo "电子邮件: ${EMAIL}"
+echo "Attempting to create a new AWS Organizations account..."
+echo "Account Name: ${ACCOUNT_NAME}"
+echo "Email: ${EMAIL}"
 
-# 执行 AWS CLI 命令，并将输出保存在一个变量中
+# Execute the AWS CLI command to create the account
+# We capture all output (including errors) into the 'RESULT' variable
 RESULT=$(aws organizations create-account \
     --email "${EMAIL}" \
     --account-name "${ACCOUNT_NAME}" \
     --query 'CreateAccountStatus' --output json 2>&1)
 
-# 检查命令是否执行成功
+# Check the exit status of the AWS CLI command
 if [ $? -eq 0 ]; then
-  echo "账户创建请求已成功提交。"
+  echo "Account creation request submitted successfully."
   
-  if ! command -v jq &> /dev/null
-  then
-      echo "警告: 'jq' 命令未找到，无法解析详细结果。"
-      echo "原始返回信息如下:"
+  # Check if 'jq' is installed to parse the JSON output
+  if ! command -v jq &> /dev/null; then
+      echo "Warning: The 'jq' command was not found, so the detailed results cannot be parsed."
+      echo "Original output:"
       echo "${RESULT}"
       exit 0
   fi
 
-  # 解析 JSON 结果并显示关键信息
+  # Parse the JSON output for key information
   ACCOUNT_ID=$(echo "${RESULT}" | jq -r '.AccountId')
-  ACCOUNT_STATUS=$(echo "${RESULT}" | jq -r '.State')
+  ACCOUNT_STATE=$(echo "${RESULT}" | jq -r '.State')
 
   echo "----------------------------------------"
-  echo "账户ID: ${ACCOUNT_ID}"
-  echo "账户状态: ${ACCOUNT_STATUS}"
+  echo "Account ID: ${ACCOUNT_ID}"
+  echo "Account State: ${ACCOUNT_STATE}"
   echo "----------------------------------------"
-  echo "一封邮件已发送至 ${EMAIL}。请检查你的收件箱以完成账户设置。"
+  echo "An email has been sent to ${EMAIL}. Please check your inbox to complete the account setup."
 else
-  echo "创建 AWS Organizations 账户失败。"
-  echo "错误信息:"
+  echo "Failed to create the AWS Organizations account."
+  echo "Error message:"
   echo "${RESULT}"
   exit 1
 fi
