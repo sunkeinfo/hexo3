@@ -4,18 +4,19 @@
 # 它会自动将账户名设置为电子邮件地址中 @ 符号之前的部分。
 #
 # 用法:
-#   curl -sL https://raw.githubusercontent.com/your-username/your-repo/main/create-org-account-simple.sh | bash -s -- "your-email@example.com"
+#   curl -sL https://raw.githubusercontent.com/your-username/your-repo/main/create-org-account-simple.sh | bash -s --dev-team@example.com
 #
-# 确保你已正确配置了 AWS CLI 的权限。
+# 确保你已正确配置了 AWS CLI 的权限，并且系统中已安装 'jq' 工具。
 
-# 检查是否提供了电子邮件地址参数
-if [ -z "$1" ]; then
-  echo "错误: 未提供电子邮件地址。"
-  echo "用法: $0 \"your-email@example.com\""
+# 检查参数是否正确，并提取电子邮件
+if [ -z "$1" ] || [[ ! "$1" =~ ^-- ]]; then
+  echo "错误: 未提供正确的电子邮件地址格式。"
+  echo "用法: $0 --your-email@example.com"
   exit 1
 fi
 
-EMAIL="$1"
+# 从第一个参数中移除前缀 "--"
+EMAIL="${1:2}"
 
 # 从电子邮件地址中提取账户名
 ACCOUNT_NAME=$(echo "$EMAIL" | cut -d'@' -f1)
@@ -31,8 +32,6 @@ echo "账户名: ${ACCOUNT_NAME}"
 echo "电子邮件: ${EMAIL}"
 
 # 执行 AWS CLI 命令，并将输出保存在一个变量中
-# 使用 --query 参数来提取 Account 字段的详细信息
-# 使用 --output json 确保输出为 JSON 格式
 RESULT=$(aws organizations create-account \
     --email "${EMAIL}" \
     --account-name "${ACCOUNT_NAME}" \
@@ -42,6 +41,14 @@ RESULT=$(aws organizations create-account \
 if [ $? -eq 0 ]; then
   echo "账户创建请求已成功提交。"
   
+  if ! command -v jq &> /dev/null
+  then
+      echo "警告: 'jq' 命令未找到，无法解析详细结果。"
+      echo "原始返回信息如下:"
+      echo "${RESULT}"
+      exit 0
+  fi
+
   # 解析 JSON 结果并显示关键信息
   ACCOUNT_ID=$(echo "${RESULT}" | jq -r '.AccountId')
   ACCOUNT_STATUS=$(echo "${RESULT}" | jq -r '.State')
