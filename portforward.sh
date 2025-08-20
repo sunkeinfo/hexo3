@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # ==============================================================================
-# All-in-One Installer for Nginx + Python Web Port Forwarding Manager
+# All-in-One Installer for Nginx + Python Web Port Forwarding Manager (v2)
 # ==============================================================================
 # This script will:
 # 1. Check for root privileges.
-# 2. Install Nginx, Python3, pip, and venv.
+# 2. Install Nginx, Python3, pip, and venv using a more robust command.
 # 3. Configure Nginx for web hosting and TCP stream proxying.
 # 4. Create a Python Flask backend API.
 # 5. Create a systemd service to run the API persistently.
@@ -16,11 +16,8 @@
 # ==============================================================================
 
 # --- Safety First ---
-# Exit immediately if a command exits with a non-zero status.
 set -e
-# Treat unset variables as an error.
 set -u
-# Pipe commands should fail if any command in the pipe fails.
 set -o pipefail
 
 # --- Helper Functions for colored output ---
@@ -45,33 +42,34 @@ fi
 # --- Main Functions ---
 
 install_dependencies() {
-    log_info "Updating package lists..."
+    log_info "Updating package lists... (This may take a moment)"
     apt-get update -y
     
-    log_info "Installing Nginx, Python3, pip, and venv..."
-    apt-get install -y nginx python3 python3-pip python3-venv
-    log_success "Dependencies installed."
+    log_info "Installing/Verifying Nginx, Python3, pip, and venv with --fix-broken..."
+    # Using -fy to attempt to fix any broken dependencies during installation.
+    apt-get install -fy nginx python3 python3-pip python3-venv
+    
+    # Explicitly check if nginx service is now available
+    if ! systemctl list-units --type=service | grep -q "nginx.service"; then
+        log_error "Nginx installation failed. The 'nginx.service' unit was not found after installation attempt."
+        log_error "Please try running 'sudo apt-get update && sudo apt-get install -fy nginx' manually to diagnose the issue."
+        exit 1
+    fi
+    log_success "Dependencies installed and verified."
 }
 
 configure_nginx() {
     log_info "Configuring Nginx..."
 
-    # 1. Create directory for TCP stream configs
     mkdir -p /etc/nginx/tcp.d
 
-    # 2. Add the stream block to nginx.conf if it doesn't exist
     if ! grep -q "include /etc/nginx/tcp.d/\*.conf;" /etc/nginx/nginx.conf; then
         log_info "Adding TCP stream configuration to nginx.conf."
-        # Appends the entire stream block to the end of the file
-        echo '
-stream {
-    include /etc/nginx/tcp.d/*.conf;
-}' >> /etc/nginx/nginx.conf
+        echo -e '\nstream {\n    include /etc/nginx/tcp.d/*.conf;\n}' >> /etc/nginx/nginx.conf
     else
         log_info "TCP stream configuration already exists in nginx.conf."
     fi
 
-    # 3. Create Nginx site configuration for the web panel
     log_info "Creating Nginx site configuration for the web panel."
     cat > /etc/nginx/sites-available/port-manager << 'EOF'
 server {
@@ -94,11 +92,9 @@ server {
 }
 EOF
 
-    # 4. Enable the new site and disable the default one
     ln -sfn /etc/nginx/sites-available/port-manager /etc/nginx/sites-enabled/
     rm -f /etc/nginx/sites-enabled/default
 
-    # 5. Test Nginx configuration
     log_info "Testing Nginx configuration..."
     nginx -t
     log_success "Nginx configured successfully."
@@ -107,14 +103,11 @@ EOF
 create_backend_api() {
     log_info "Creating Python Flask backend API..."
     
-    # 1. Create directories and virtual environment
     mkdir -p /opt/port-manager-api
     python3 -m venv /opt/port-manager-api/venv
     
-    # 2. Install Flask into the virtual environment
     /opt/port-manager-api/venv/bin/pip install Flask
     
-    # 3. Create the app.py file
     cat > /opt/port-manager-api/app.py << 'EOF'
 import os
 import subprocess
@@ -126,29 +119,33 @@ TCP_CONFIG_DIR = "/etc/nginx/tcp.d"
 def reload_nginx():
     """Tests Nginx configuration and then reloads it. Returns (status, message)."""
     try:
-        test_result = subprocess.run(['sudo', 'nginx', '-t'], capture_output=True, text=True, check=True)
+        # Use subprocess.run with check=True to automatically raise an exception on non-zero exit codes.
+        subprocess.run(['sudo', 'nginx', '-t'], capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as e:
-        return False, f"Nginx configuration error: {e.stderr}"
+        # The stderr from nginx -t is the most useful error message.
+        return False, f"Nginx configuration error: {e.stderr.strip()}"
     
     try:
-        reload_result = subprocess.run(['sudo', 'systemctl', 'reload', 'nginx'], capture_output=True, text=True, check=True)
+        subprocess.run(['sudo', 'systemctl', 'reload', 'nginx'], capture_output=True, text=True, check=True)
     except subprocess.CalledProcessError as e:
-        return False, f"Failed to reload Nginx: {e.stderr}"
+        return False, f"Failed to reload Nginx: {e.stderr.strip()}"
         
     return True, "Nginx reloaded successfully."
 
 @app.route('/api/rules', methods=['GET'])
 def get_rules():
+    """Lists all current forwarding rules."""
     if not os.path.exists(TCP_CONFIG_DIR):
-        return jsonify([])
+        return jsonify([]) # Return empty list if dir doesn't exist
     rules = []
-    for filename in os.listdir(TCP_CONFIG_DIR):
+    for filename in sorted(os.listdir(TCP_CONFIG_DIR)):
         if filename.endswith(".conf"):
             rules.append({"id": filename, "name": filename.replace('.conf', '')})
     return jsonify(rules)
 
 @app.route('/api/add', methods=['POST'])
 def add_rule():
+    """Adds a new forwarding rule."""
     data = request.json
     inbound_port = data.get('inbound_port')
     dest_addr = data.get('dest_addr')
@@ -165,6 +162,7 @@ def add_rule():
     if os.path.exists(filepath):
         return jsonify({"error": f"Rule for inbound port {inbound_port} already exists."}), 409
 
+    # Using a structured format for clarity and security
     config_content = f"server {{\n    listen {inbound_port};\n    proxy_pass {dest_addr}:{dest_port};\n}}"
     
     try:
@@ -175,16 +173,18 @@ def add_rule():
 
     success, message = reload_nginx()
     if not success:
-        os.remove(filepath)
+        os.remove(filepath) # Rollback: remove the bad config file
         return jsonify({"error": message}), 500
         
     return jsonify({"success": True, "message": f"Rule for port {inbound_port} added."}), 201
 
 @app.route('/api/delete', methods=['POST'])
 def delete_rule():
+    """Deletes a forwarding rule."""
     data = request.json
     filename = data.get('id')
 
+    # Basic security check against directory traversal
     if not filename or not filename.endswith(".conf") or '/' in filename:
         return jsonify({"error": "Invalid filename provided."}), 400
         
@@ -197,6 +197,7 @@ def delete_rule():
     
     success, message = reload_nginx()
     if not success:
+        # The file is already deleted, but we should still report the Nginx reload error.
         return jsonify({"error": f"File deleted, but failed to reload Nginx: {message}"}), 500
 
     return jsonify({"success": True, "message": f"Rule {filename} deleted."})
@@ -215,11 +216,14 @@ Description=Port Manager API for Nginx
 After=network.target
 
 [Service]
+# Running as root is simpler for sudo access needed by the app.
+# For higher security, run as a dedicated user and configure sudoers for that user.
 User=root
 Group=www-data
 WorkingDirectory=/opt/port-manager-api
 ExecStart=/opt/port-manager-api/venv/bin/python app.py
 Restart=always
+RestartSec=5s
 
 [Install]
 WantedBy=multi-user.target
@@ -231,7 +235,6 @@ create_frontend() {
     log_info "Creating frontend web interface..."
     mkdir -p /var/www/port-manager
     
-    # Using 'EOF' in quotes to prevent shell from expanding variables inside the heredoc
     cat > /var/www/port-manager/index.html << 'EOF'
 <!DOCTYPE html>
 <html lang="zh-CN">
@@ -249,6 +252,7 @@ create_frontend() {
         input[type="text"], input[type="number"] { width: 100%; box-sizing: border-box; padding: 10px; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem; }
         button { padding: 10px 20px; font-size: 1rem; color: #fff; background-color: #007bff; border: none; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; white-space: nowrap; }
         button:hover { background-color: #0056b3; }
+        button:disabled { background-color: #6c757d; cursor: not-allowed; }
         table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         th, td { padding: 12px; border-bottom: 1px solid #dee2e6; text-align: left; }
         th { background-color: #f2f2f2; }
@@ -266,18 +270,9 @@ create_frontend() {
         
         <h2>添加新规则</h2>
         <form id="add-rule-form">
-            <div class="form-group">
-                <label for="inbound_port">入站端口</label>
-                <input type="number" id="inbound_port" placeholder="例如: 8888" required>
-            </div>
-            <div class="form-group">
-                <label for="dest_addr">目标地址</label>
-                <input type="text" id="dest_addr" placeholder="IP或域名" required>
-            </div>
-            <div class="form-group">
-                <label for="dest_port">目标端口</label>
-                <input type="number" id="dest_port" placeholder="例如: 80" required>
-            </div>
+            <div class="form-group"><label for="inbound_port">入站端口</label><input type="number" id="inbound_port" placeholder="例如: 8888" required></div>
+            <div class="form-group"><label for="dest_addr">目标地址</label><input type="text" id="dest_addr" placeholder="IP或域名" required></div>
+            <div class="form-group"><label for="dest_port">目标端口</label><input type="number" id="dest_port" placeholder="例如: 80" required></div>
             <button type="submit">添加规则</button>
         </form>
 
@@ -376,17 +371,14 @@ EOF
 
 setup_sudoers() {
     log_info "Setting up sudo permissions for the API..."
-    # This is a safer way than editing sudoers directly.
-    # It allows the service (running as root) to reload nginx without a password.
-    # While the service already runs as root, this is good practice for if you later
-    # decide to run the service as a non-root user.
+    # The API service runs as root, so it already has permissions.
+    # This file ensures that even if you change the service user,
+    # it can still perform the required actions without a password prompt.
     cat > /etc/sudoers.d/99-port-manager << 'EOF'
-# Allows the user running the port-manager service to reload nginx
 Defaults:root !requiretty
 root ALL=(ALL) NOPASSWD: /usr/sbin/nginx -t
 root ALL=(ALL) NOPASSWD: /bin/systemctl reload nginx
 EOF
-    # Set correct permissions for the sudoers file
     chmod 0440 /etc/sudoers.d/99-port-manager
     log_success "Sudo permissions configured."
 }
@@ -394,9 +386,8 @@ EOF
 configure_firewall() {
     log_info "Configuring firewall (UFW)..."
     if command -v ufw >/dev/null 2>&1; then
-        # Allow SSH, HTTP, and the web panel port
-        ufw allow 22/tcp  # CRITICAL: Ensure SSH access is not blocked
-        ufw allow 80/tcp  # Web panel access
+        ufw allow 22/tcp
+        ufw allow 80/tcp
         
         # Enable UFW if it's not already active
         if ! ufw status | grep -q "Status: active"; then
@@ -426,10 +417,11 @@ main() {
     create_frontend
     setup_sudoers
     start_services
-    configure_firewall # Run firewall last to avoid locking self out
+    configure_firewall
     
-    # Final message
-    PUBLIC_IP=$(curl -s ifconfig.me)
+    # Use 'ip a' or 'hostname -I' as a fallback if curl fails.
+    PUBLIC_IP=$(hostname -I | awk '{print $1}' || echo "YOUR_SERVER_IP")
+    
     echo -e "\n\n\e[1;32m=============================================================="
     echo -e "          INSTALLATION COMPLETE!          "
     echo -e "==============================================================\e[0m"
@@ -442,4 +434,5 @@ main() {
     echo -e "You may also need to open these ports in your cloud provider's security group."
 }
 
+# Run the main function
 main
