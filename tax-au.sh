@@ -17,16 +17,17 @@ aws taxsettings delete-tax-registration --region us-east-1 || true
 echo "旧税务信息删除操作完成。"
 
 # --- 步骤 2: 准备新的澳大利亚税务信息 (JSON 格式) ---
-# 直接将 JSON 作为一个单引号字符串赋值给变量，避免使用 read 命令。
-# 这种方法不会与 `curl | bash` 的标准输入冲突。
+# **[修正]** 根据 AWS API 错误提示，进行了以下修正：
+# 1. "taxRegistrationType"  ->  "registrationType"
+# 2. "address" 对象          ->  "legalAddress" 对象
 echo "正在准备新的税务信息 JSON 数据..."
 TAX_INFO='{
   "taxRegistrationEntry": {
-    "taxRegistrationType": "ABN",
+    "registrationType": "ABN",
     "legalName": "ooo",
     "registrationId": "84402315608",
     "sector": "Business",
-    "address": {
+    "legalAddress": {
       "addressLine1": "ooo",
       "addressLine2": "o",
       "city": "oo",
@@ -39,8 +40,6 @@ TAX_INFO='{
 
 # --- 步骤 3: 更新税务信息 ---
 # 使用 put-tax-registration 命令提交新的税务信息。
-# 注意这里我们用 echo "$TAX_INFO" 并通过管道传递给 --cli-input-json -
-# 或者更简单地，直接使用变量。旧版本的CLI可能需要前者，但新版本直接用变量更清晰。
 echo "正在提交新的税务信息至 AWS..."
 aws taxsettings put-tax-registration --cli-input-json "$TAX_INFO" --region us-east-1
 
