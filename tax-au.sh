@@ -17,18 +17,14 @@ aws taxsettings delete-tax-registration --region us-east-1 || true
 echo "旧税务信息删除操作完成。"
 
 # --- 步骤 2: 准备新的澳大利亚税务信息 (JSON 格式) ---
-# **[最终验证修正]** 根据所有 AWS API 错误提示进行修正：
-# 1. "taxRegistrationType"  ->  "registrationType"
-# 2. "address" 对象          ->  "legalAddress"
-# 3. "registrationType" 的值 -> "GST"
-# 4. "sector" 的值         -> "Business" (根据最新的错误日志精确修正)
+# **[最终版本]** 根据您的要求，将 'sector' 字段设置为 "Individual"
 echo "正在准备新的税务信息 JSON 数据..."
 TAX_INFO='{
   "taxRegistrationEntry": {
     "registrationType": "GST",
     "legalName": "ooo",
     "registrationId": "84402315608",
-    "sector": "Business",
+    "sector": "Individual",
     "legalAddress": {
       "addressLine1": "ooo",
       "addressLine2": "o",
@@ -50,3 +46,4 @@ echo "--- 成功 ---"
 echo "AWS 税务信息已成功更新为指定的澳大利亚信息！"
 echo "国家/地区: Australia"
 echo "税务登记号 (TRN/ABN): 84402315608"
+echo "账户类型 (Sector): Individual"
