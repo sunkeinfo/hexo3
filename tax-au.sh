@@ -20,14 +20,15 @@ echo "旧税务信息删除操作完成。"
 # **[最终修正]** 根据 AWS API 错误提示，进行以下修正：
 # 1. "taxRegistrationType"  ->  "registrationType" (已修正)
 # 2. "address" 对象          ->  "legalAddress" 对象 (已修正)
-# 3. "registrationType" 的值 "ABN" -> "GST" (本次修正)
+# 3. "registrationType" 的值 "ABN" -> "GST" (已修正)
+# 4. "sector" 的值 "Business" -> "BUSINESS" (本次修正)
 echo "正在准备新的税务信息 JSON 数据..."
 TAX_INFO='{
   "taxRegistrationEntry": {
     "registrationType": "GST",
     "legalName": "ooo",
     "registrationId": "84402315608",
-    "sector": "Business",
+    "sector": "BUSINESS",
     "legalAddress": {
       "addressLine1": "ooo",
       "addressLine2": "o",
