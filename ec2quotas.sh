@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # ==============================================================================
-# Script: get_all_ec2_vcpu_quotas_v3.sh
-# Description: Checks all AWS EC2 vCPU quotas, prioritizing the main "Running
-#              On-Demand instances" quota, and lists all other specific
-#              instance family quotas as well.
+# Script: get_all_ec2_vcpu_quotas_v4.sh
+# Description: Checks all AWS EC2 vCPU quotas, correctly identifying and
+#              prioritizing the main "All Running Standard (...) instances"
+#              quota, and lists all other relevant quotas.
 # Dependencies: aws-cli, jq
-# Version: 3.0
+# Version: 4.0
 # ==============================================================================
 
 # --- Configuration ---
@@ -14,6 +14,9 @@
 AWS_REGION="us-east-1"
 # 服务代码保持不变
 SERVICE_CODE="ec2"
+# (*** 这是修改过的部分 ***)
+# 根据您的反馈，定义了确切的主要配额名称
+MAIN_QUOTA_NAME="All Running Standard (A, C, D, H, I, M, R, T, Z) instances"
 
 # --- 依赖检查 ---
 
@@ -51,13 +54,7 @@ echo "--------------------------------------------------"
 echo "在 ${AWS_REGION} 区域找到的 EC2 vCPU 配额如下:"
 echo "--------------------------------------------------"
 
-# (*** 这是最终修改的部分 ***)
-# 使用更精准的 jq 逻辑来捕获所有相关的 vCPU 配额。
-# AWS API 并不提供一个名为 "All Running Instances" 的单一配额。
-# 相反，它按实例类型（如 Standard, F, G, P 等）提供多个配额。
-# 此脚本的目标是显示所有这些独立的配额。
-# 过滤器 'contains("Running") and contains("instance")' 是捕获这些配额的最可靠方法。
-
+# 使用 jq 筛选出所有与正在运行的实例相关的配额
 filtered_quotas=$(echo "$aws_output" | jq -c '.Quotas[] | select(.QuotaName | contains("Running") and contains("instance"))')
 
 # 检查筛选结果是否为空
@@ -68,7 +65,7 @@ if [[ -z "$filtered_quotas" ]]; then
     exit 0
 fi
 
-# 标记是否找到了最重要的那个配额
+# 标记是否找到了我们定义的主要配额
 found_main_quota=false
 
 # 循环输出筛选出的配额
@@ -82,22 +79,22 @@ echo "$filtered_quotas" | while read -r quota_json; do
         continue
     fi
 
-    # 特别高亮显示最重要的总配额
-    if [[ "$quota_name" == "Running On-Demand instances" ]]; then
-        echo "✅ 主要配额: \"${quota_name}\", 当前限制是 ${quota_value} vCPUs。"
+    # (*** 这是修改过的部分 ***)
+    # 优先高亮显示您指定的那个总配额
+    if [[ "$quota_name" == "$MAIN_QUOTA_NAME" ]]; then
+        echo "✅ 主要总配额: \"${quota_name}\", 当前限制是 ${quota_value} vCPUs。"
         found_main_quota=true
     else
-        # 打印其他所有分类配额
-        echo "   - 分类配额: \"${quota_name}\", 当前限制是 ${quota_value} vCPUs。"
+        # 打印其他所有配额
+        echo "   - 其他配额: \"${quota_name}\", 当前限制是 ${quota_value} vCPUs。"
     fi
 done
 
-# 如果循环结束后仍未找到总配额，给出一个提示
+# 如果循环结束后仍未找到指定的总配额，给出一个明确的提示
 if [ "$found_main_quota" = false ]; then
     echo "--------------------------------------------------"
-    echo "注意: 未找到名为 'Running On-Demand instances' 的主要总配额。"
-    echo "上面列出的是按实例家族分类的所有可用配额。"
+    echo "注意: 未找到名为 \"${MAIN_QUOTA_NAME}\" 的主要总配额。"
+    echo "上面列出的是所有其他找到的与正在运行的实例相关的配额。"
 fi
-
 
 exit 0
