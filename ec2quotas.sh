@@ -1,18 +1,17 @@
 #!/bin/bash
 
 # ==============================================================================
-# 脚本: get_core_quotas_v8_cn.sh
-# 描述: 仅查询两个关键 EC2 vCPU 配额，并只显示其当前应用的数值。
+# 脚本: get_core_quotas_v9_cn.sh
+# 描述: 仅查询两个关键 EC2 vCPU 配额并显示当前值。
+#       已修复 subshell 问题，不再显示错误的“未找到”信息。
 # 依赖: aws-cli, jq
-# 版本: 8.0 (极简最终版)
+# 版本: 9.0 (最终完美版)
 # ==============================================================================
 
 # --- 配置 ---
 AWS_REGION="us-east-1"
 SERVICE_CODE="ec2"
-# 1. Spot 实例请求配额
 PRIMARY_QUOTA_NAME="All Standard (A, C, D, H, I, M, R, T, Z) Spot Instance Requests"
-# 2. 按需标准实例配额
 SECONDARY_QUOTA_NAME="Running On-Demand Standard (A, C, D, H, I, M, R, T, Z) instances"
 
 # --- 依赖检查 ---
@@ -37,13 +36,11 @@ fi
 # --- 解析和输出 ---
 echo "--------------------------------------------------"
 
-# 使用 jq 直接筛选出我们需要的两个配额
 specific_quotas=$(echo "$aws_output" | jq -c \
     --arg primary "$PRIMARY_QUOTA_NAME" \
     --arg secondary "$SECONDARY_QUOTA_NAME" \
     '.Quotas[] | select(.QuotaName == $primary or .QuotaName == $secondary)')
 
-# 检查是否找到了任何一个我们关心的配额
 if [[ -z "$specific_quotas" ]]; then
     echo "错误: 未能找到任何指定的关键配额。"
     exit 1
@@ -52,15 +49,12 @@ fi
 found_primary=false
 found_secondary=false
 
-# 循环处理找到的结果
-echo "$specific_quotas" | while read -r quota_json; do
+# (*** 关键修正：使用进程替换来避免 subshell 问题 ***)
+while read -r quota_json; do
     quota_name=$(echo "$quota_json" | jq -r '.QuotaName')
     applied_value=$(echo "$quota_json" | jq -r '.Value')
-
-    # 将数值转为整数 (例如 64.0 -> 64)
     applied_value_display=$(printf "%.0f" "$applied_value")
 
-    # (*** 关键修改：单行输出，只显示当前值 ***)
     if [[ "$quota_name" == "$PRIMARY_QUOTA_NAME" ]]; then
         echo "✅ Spot 实例请求配额: ${applied_value_display} vCPUs"
         found_primary=true
@@ -68,14 +62,15 @@ echo "$specific_quotas" | while read -r quota_json; do
         echo "✅ 按需实例配额: ${applied_value_display} vCPUs"
         found_secondary=true
     fi
-done
+done < <(echo "$specific_quotas") # <--- 修正就在这里！
 
 # --- 最终检查 ---
+# 现在这里的检查会正确工作
 if [ "$found_primary" = false ]; then
-    echo "⚠️  注意: 未找到 Spot 实例请求配额 (${PRIMARY_QUOTA_NAME})。"
+    echo "⚠️  注意: 未在您的账户中找到 Spot 实例请求配额 (${PRIMARY_QUOTA_NAME})。"
 fi
 if [ "$found_secondary" = false ]; then
-    echo "⚠️  注意: 未找到按需实例配额 (${SECONDARY_QUOTA_NAME})。"
+    echo "⚠️  注意: 未在您的账户中找到按需实例配额 (${SECONDARY_QUOTA_NAME})。"
 fi
 
 echo "--------------------------------------------------"
