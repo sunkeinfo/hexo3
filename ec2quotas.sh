@@ -25,7 +25,7 @@ if ! command -v jq &> /dev/null; then
 fi
 
 # --- 核心逻辑 ---
-echo "正在查询关键 EC2 配额..."
+echo "正在查询关键us-east-1的 EC2 配额..."
 aws_output=$(aws service-quotas list-service-quotas --service-code "$SERVICE_CODE" --region "$AWS_REGION" 2>&1)
 if [ $? -ne 0 ]; then
     echo "错误: AWS CLI 命令执行失败。" >&2
