@@ -1,11 +1,12 @@
 #!/bin/bash
 
 # ==============================================================================
-# Script: get_all_ec2_vcpu_quotas_v2.sh
-# Description: Checks all AWS EC2 vCPU quotas for running instances
-#              in the specified region and returns human-readable sentences.
+# Script: get_all_ec2_vcpu_quotas_v3.sh
+# Description: Checks all AWS EC2 vCPU quotas, prioritizing the main "Running
+#              On-Demand instances" quota, and lists all other specific
+#              instance family quotas as well.
 # Dependencies: aws-cli, jq
-# Version: 2.0
+# Version: 3.0
 # ==============================================================================
 
 # --- Configuration ---
@@ -18,7 +19,6 @@ SERVICE_CODE="ec2"
 
 # 检查 aws-cli 是否已安装
 if ! command -v aws &> /dev/null; then
-    # 将错误信息输出到 stderr
     echo "错误: 未找到 aws-cli 命令。请先安装和配置 AWS CLI。" >&2
     exit 1
 fi
@@ -48,14 +48,17 @@ fi
 # --- 解析和输出 ---
 
 echo "--------------------------------------------------"
-echo "在 ${AWS_REGION} 区域找到的实例 vCPU 配额如下:"
+echo "在 ${AWS_REGION} 区域找到的 EC2 vCPU 配额如下:"
 echo "--------------------------------------------------"
 
-# 使用 jq 解析 JSON，筛选出所有与正在运行的实例相关的 vCPU 配额
-# (*** 这是修改过的部分 ***)
-# 移除了 'select(.Unit == "Count")' 条件，因为它过于严格，
-# vCPU 配额的单位通常是 "None" 而不是 "Count"，导致之前无法正确筛选。
-filtered_quotas=$(echo "$aws_output" | jq -c '.Quotas[] | select(.QuotaName | contains("Running") and contains("instances"))')
+# (*** 这是最终修改的部分 ***)
+# 使用更精准的 jq 逻辑来捕获所有相关的 vCPU 配额。
+# AWS API 并不提供一个名为 "All Running Instances" 的单一配额。
+# 相反，它按实例类型（如 Standard, F, G, P 等）提供多个配额。
+# 此脚本的目标是显示所有这些独立的配额。
+# 过滤器 'contains("Running") and contains("instance")' 是捕获这些配额的最可靠方法。
+
+filtered_quotas=$(echo "$aws_output" | jq -c '.Quotas[] | select(.QuotaName | contains("Running") and contains("instance"))')
 
 # 检查筛选结果是否为空
 if [[ -z "$filtered_quotas" ]]; then
@@ -65,19 +68,36 @@ if [[ -z "$filtered_quotas" ]]; then
     exit 0
 fi
 
+# 标记是否找到了最重要的那个配额
+found_main_quota=false
+
 # 循环输出筛选出的配额
 echo "$filtered_quotas" | while read -r quota_json; do
-    # 从每个 JSON 对象中提取配额名称和值
     quota_name=$(echo "$quota_json" | jq -r '.QuotaName')
     quota_value=$(echo "$quota_json" | jq -r '.Value')
 
-    # 检查是否成功提取到值
+    # 检查值是否有效
     if [[ -z "$quota_value" || "$quota_value" == "null" ]]; then
         echo "警告: 未能为配额 '${quota_name}' 提取到有效值。" >&2
+        continue
+    fi
+
+    # 特别高亮显示最重要的总配额
+    if [[ "$quota_name" == "Running On-Demand instances" ]]; then
+        echo "✅ 主要配额: \"${quota_name}\", 当前限制是 ${quota_value} vCPUs。"
+        found_main_quota=true
     else
-        # 打印格式化的句子
-        echo "配额: \"${quota_name}\", 当前限制是 ${quota_value} vCPUs。"
+        # 打印其他所有分类配额
+        echo "   - 分类配额: \"${quota_name}\", 当前限制是 ${quota_value} vCPUs。"
     fi
 done
+
+# 如果循环结束后仍未找到总配额，给出一个提示
+if [ "$found_main_quota" = false ]; then
+    echo "--------------------------------------------------"
+    echo "注意: 未找到名为 'Running On-Demand instances' 的主要总配额。"
+    echo "上面列出的是按实例家族分类的所有可用配额。"
+fi
+
 
 exit 0
