@@ -4,7 +4,7 @@
 # 目標 AWS 區域
 REGION="us-west-2"
 # 刪除 EC2 後要 ping 的內網 IP
-PING_IP="10.241.43.97"
+PING_IP="10.241.219.215"
 # Ping 的超時時間 (秒)
 TIMEOUT_SECONDS=120
 
