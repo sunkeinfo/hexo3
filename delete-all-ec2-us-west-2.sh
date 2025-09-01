@@ -41,11 +41,14 @@ else
     exit 1
   fi
   
-  echo "成功發送刪除指令。現在開始監控內網 IP: $PING_IP"
+  # === 新增功能：等待 5 秒 ===
+  echo "成功發送刪除指令。等待 5 秒後開始監控內網 IP: $PING_IP"
+  sleep 5
   
   # --- 步驟 3: Ping 內網 IP 並設定超時 ---
   
-  # 記錄開始時間
+  echo "開始監控..."
+  # 記錄開始 ping 的時間
   START_TIME=$(date +%s)
 
   # 迴圈檢查，直到超時
@@ -57,25 +60,28 @@ else
 
     # 檢查是否超時
     if [ "$ELAPSED_TIME" -ge "$TIMEOUT_SECONDS" ]; then
+      # 在輸出超時訊息前，先輸出一行空白，避免覆蓋進度條
+      echo
       echo "失敗：操作超時！在 $TIMEOUT_SECONDS 秒內無法 ping 通 $PING_IP。"
       exit 1
     fi
 
-    # 執行 ping 指令
-    # -c 1: 只發送一個封包
-    # -W 1: 等待回應的時間為 1 秒
-    # >/dev/null 2>&1: 隱藏所有輸出，我們只關心結束代碼
+    # 執行 ping 指令 (-c 1: 發送一個封包, -W 1: 等待回應 1 秒)
+    # 隱藏所有輸出，我們只關心結束代碼
     ping -c 1 -W 1 "$PING_IP" >/dev/null 2>&1
     
     # 檢查 ping 指令的結束代碼
     if [ $? -eq 0 ]; then
+      # === 新增功能：回報成功耗時 ===
       # 如果結束代碼為 0，表示 ping 成功
-      echo "成功！已成功 ping 通 $PING_IP。"
+      # 在輸出成功訊息前，先輸出一行空白，避免覆蓋進度條
+      echo
+      echo "成功！在監控了 $ELAPSED_TIME 秒後，已成功 ping 通 $PING_IP。"
       exit 0
     else
       # 如果 ping 失敗，則等待 1 秒後重試
       # 使用 \r 來讓游標回到行首，實現動態更新進度
-      echo -ne "無法連線，正在重試... (已過 $ELAPSED_TIME / $TIMEOUT_SECONDS 秒)\r"
+      echo -ne "無法連線，正在重試... (已監控 $ELAPSED_TIME / $TIMEOUT_SECONDS 秒)\r"
       sleep 1
     fi
   done
