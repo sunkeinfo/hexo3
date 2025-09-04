@@ -3,252 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>资金轮动操作计划表</title>
+    <title>我的资金轮动操作台 (V8.3 - 最终稳定版)</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f8f9fa;
-            margin: 0;
-            padding: 20px;
-        }
-        h1 {
-            color: #0056b3;
-            text-align: center;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-        th, td {
-            border: 1px solid #dee2e6;
-            padding: 12px;
-            text-align: left;
-            vertical-align: top;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-            font-weight: bold;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        tr:hover {
-            background-color: #e9ecef;
-        }
-        .status-clean {
-            color: #28a745;
-            font-weight: bold;
-        }
-        .status-cooling {
-            color: #dc3545;
-            font-weight: bold;
-        }
-        .decision {
-            background-color: #fffbe6;
-        }
-        .decision strong {
-            color: #856404;
-        }
-        .action-arrow {
-            font-size: 1.5em;
-            color: #007bff;
-            font-weight: bold;
-            display: block;
-            text-align: center;
-        }
-        .note {
-            font-size: 0.9em;
-            color: #6c757d;
-        }
-        .header-bank {
-            text-align: center;
-        }
+        /* CSS styles are the same */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f0f2f5; margin: 0; padding: 20px; font-size: 13px; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
+        .page-header h1 { color: #0056b3; margin: 0; }
+        .header-actions { display: flex; gap: 10px; }
+        .header-btn { background: none; border: 1px solid #007bff; color: #007bff; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-size: 1em; display: flex; align-items: center; gap: 5px; }
+        .header-btn:hover { background-color: #e7f3ff; }
+        .header-btn .icon { font-size: 1.5em; }
+        #login-screen { display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; }
+        .login-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 320px; text-align: center; }
+        .login-container h2 { margin-top: 0; }
+        .login-container input { width: calc(100% - 20px); padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+        .login-container button { width: 100%; padding: 10px; border: none; border-radius: 4px; background-color: #007bff; color: white; font-size: 1.1em; cursor: pointer; }
+        .login-container .error-message { color: red; margin-top: 10px; visibility: hidden; }
+        #main-content { display: none; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        th, td { border: 1px solid #dee2e6; padding: 8px; text-align: center; vertical-align: top; }
+        th { background-color: #007bff; color: white; font-weight: bold; position: relative; }
+        tbody tr:nth-child(even) { background-color: #f2f2f2; }
+        tbody tr:hover { background-color: #e9ecef; }
+        .maturity-details { text-align: left; }
+        .status-cell { padding: 4px; }
+        .status-selector { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
+        .status-btn { border: 2px solid #ccc; background-color: #f0f0f0; padding: 3px 10px; border-radius: 12px; cursor: pointer; font-size: 0.9em; transition: all 0.2s ease-in-out; }
+        .status-btn .icon { display: none; margin-right: 3px; }
+        .status-btn.selected { font-weight: bold; transform: scale(1.05); box-shadow: 0 0 5px rgba(0,0,0,0.2); }
+        .status-btn.selected .icon { display: inline; }
+        .clean.selected { background-color: #d4edda; color: #155724; border-color: #28a745; }
+        .cooling.selected { background-color: #f8d7da; color: #721c24; border-color: #dc3545; }
+        .status-cell.is-clean { background-color: rgba(40, 167, 69, 0.05); }
+        .status-cell.is-cooling { background-color: rgba(220, 53, 69, 0.05); }
+        .remark-input { width: 90%; border: 1px solid #ced4da; border-radius: 4px; padding: 3px; font-size: 0.9em; }
+        .decision-textarea { width: 98%; height: 70px; border: 1px solid #ced4da; border-radius: 4px; padding: 5px; font-size: 1em; resize: vertical; }
+        .save-btn { background-color: #28a745; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: background-color 0.2s; font-size: 0.9em; }
+        .save-feedback { font-size: 0.9em; color: green; font-weight: bold; margin-top: 4px; visibility: hidden; }
     </style>
 </head>
 <body>
 
-    <h1>资金轮动操作计划表</h1>
-    <p class="note" style="text-align: center;"><b>最高指令：</b>最小化闲置期优先 | <b>起始日期：</b>2025年9月4日</p>
-    <p class="note" style="text-align: center;">
-        <b>初始状态：</b>
-        <span class="status-clean">汇丰(HSBC): ✅ 干净</span> | 
-        <span class="status-clean">恒生(Hang Seng): ✅ 干净</span> | 
-        <span class="status-clean">中银(BOC): ✅ 干净</span>
-    </p>
+    <div id="login-screen">
+        <div class="login-container">
+            <h2>登录您的操作台</h2>
+            <input type="email" id="email-input" value="snaagk@gmail.com" readonly>
+            <input type="password" id="password-input" placeholder="请输入密码">
+            <button id="login-button">登录</button>
+            <p id="error-message" class="error-message">密码错误或用户不存在</p>
+        </div>
+    </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th rowspan="2">到期日</th>
-                <th rowspan="2">到期款项 (USD)</th>
-                <th colspan="3" class="header-bank">操作前银行状态</th>
-                <th rowspan="2" style="width: 30%;">决策与操作指令</th>
-                <th colspan="3" class="header-bank">操作后银行状态</th>
-            </tr>
-            <tr>
-                <th>汇丰 (HSBC)</th>
-                <th>恒生 (Hang Seng)</th>
-                <th>中银 (BOC)</th>
-                <th>汇丰 (HSBC)</th>
-                <th>恒生 (Hang Seng)</th>
-                <th>中银 (BOC)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Step 1 -->
-            <tr>
-                <td>2025年9月5日</td>
-                <td>BOC HK<br>$4,912.00</td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="decision">
-                    <strong>决策:</strong> 存在两个干净银行 (HSBC, Hang Seng)。为保留冷却期更长的恒生银行的“干净”状态，优先选择汇丰。<br>
-                    <span class="action-arrow">⬇️</span>
-                    <strong>指令:</strong> 立即将 <strong>$4,912.00</strong> 从 <strong>BOC</strong> 转账至 <strong>HSBC</strong>。
-                </td>
-                <td class="status-clean">✅ 干净<br><span class="note">接收资金, 状态不变</span></td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年10月1日</span></td>
-            </tr>
-            <!-- Step 2 -->
-            <tr>
-                <td>2025年9月10日</td>
-                <td>HSBC<br>$19,760.00</td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
-                <td class="decision">
-                    <strong>决策:</strong> 资金来自HSBC，不能存入自身。唯一干净的银行是恒生。<br>
-                    <span class="action-arrow">⬇️</span>
-                    <strong>指令:</strong> 立即将 <strong>$19,760.00</strong> 从 <strong>HSBC</strong> 转账至 <strong>Hang Seng</strong>。
-                </td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年9月17日</span></td>
-                <td class="status-clean">✅ 干净<br><span class="note">接收资金, 状态不变</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
-            </tr>
-            <!-- Step 3 -->
-            <tr>
-                <td>2025年9月12日</td>
-                <td>
-                    HSBC: $5,630.00<br>
-                    BOC HK: $8,782.00<br>
-                    Hang Seng: $10,000.00<br>
-                    <strong>总计: $24,412.00</strong>
-                </td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 9/17</span></td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
-                <td class="decision">
-                    <strong>决策 (最短等待):</strong> 当天所有银行均有资金转出，全部将进入冷却期。必须等待最早恢复的银行。<br>
-                    - HSBC 转出后，新冷却期至 <strong>9月19日</strong>。<br>
-                    - Hang Seng 转出后，新冷却期至 9月27日。<br>
-                    - BOC 转出后，冷却期不变，至10月1日。<br>
-                    <span class="action-arrow">⬇️</span>
-                    <strong>指令:</strong> 暂时持有 <strong>$24,412.00</strong>，等待至 <strong>2025年9月19日</strong> 转账至 <strong>HSBC</strong>。
-                </td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年9月19日</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年9月27日</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
-            </tr>
-            <!-- Step 4 -->
-            <tr>
-                <td>2025年9月19日</td>
-                <td>HSBC HK<br>$9,400.00</td>
-                <td class="status-clean">✅ 干净<br><span class="note">本日恢复</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 9/27</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
-                <td class="decision">
-                    <strong>决策 (最短等待):</strong>
-                    1. 先执行上一步指令：将$24,412转入HSBC。HSBC接收资金，状态仍为干净。<br>
-                    2. 本日$9,400从HSBC到期转出，不能存入自身。其他银行均在冷却。<br>
-                    3. 最近的干净银行是Hang Seng (9月27日恢复)。<br>
-                    <span class="action-arrow">⬇️</span>
-                    <strong>指令:</strong> 暂时持有 <strong>$9,400.00</strong>，等待至 <strong>2025年9月27日</strong> 转账至 <strong>Hang Seng</strong>。
-                </td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年9月26日</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 9/27</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
-            </tr>
-            <!-- Step 5 -->
-            <tr>
-                <td>2025年9月29日</td>
-                <td>HSBC HK<br>$9,881.00</td>
-                <td class="status-clean">✅ 干净<br><span class="note">9/26已恢复</span></td>
-                <td class="status-clean">✅ 干净<br><span class="note">9/27已恢复</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
-                 <td class="decision">
-                    <strong>决策:</strong> 资金来自HSBC。唯一可用的干净银行是恒生。<br>
-                    <span class="action-arrow">⬇️</span>
-                    <strong>指令:</strong> 立即将 <strong>$9,881.00</strong> 从 <strong>HSBC</strong> 转账至 <strong>Hang Seng</strong>。
-                </td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年10月6日</span></td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
-            </tr>
-            <!-- Step 6 -->
-             <tr>
-                <td>2025年10月2日</td>
-                <td>HSBC<br>$5,200.00</td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/6</span></td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="status-clean">✅ 干净<br><span class="note">10/1已恢复</span></td>
-                 <td class="decision">
-                    <strong>决策:</strong> 资金来自HSBC。存在两个干净银行 (Hang Seng, BOC)。两者皆可。<br>
-                    <strong>选择1 (推荐):</strong> 转至BOC，使其余两家银行的冷却周期错开。<br>
-                    <strong>选择2:</strong> 转至Hang Seng。<br>
-                    <span class="action-arrow">⬇️</span>
-                    <strong>指令:</strong> 立即将 <strong>$5,200.00</strong> 从 <strong>HSBC</strong> 转账至 <strong>BOC</strong>。
-                </td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年10月9日</span></td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="status-clean">✅ 干净</td>
-            </tr>
-            <!-- Step 7 -->
-            <tr>
-                <td>2025年10月8日</td>
-                <td>Hang Seng HK<br>$7,067.00</td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/9</span></td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="decision">
-                    <strong>决策:</strong> 资金来自Hang Seng。唯一立即可用的干净银行是BOC (HSBC次日才恢复)。<br>
-                    <span class="action-arrow">⬇️</span>
-                    <strong>指令:</strong> 立即将 <strong>$7,067.00</strong> 从 <strong>Hang Seng</strong> 转账至 <strong>BOC</strong>。
-                </td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/9</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年10月23日</span></td>
-                <td class="status-clean">✅ 干净</td>
-            </tr>
-             <!-- Step 8 -->
-            <tr>
-                <td>2025年10月15日</td>
-                <td>HSBC<br>$11,288.00</td>
-                <td class="status-clean">✅ 干净<br><span class="note">10/9已恢复</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/23</span></td>
-                <td class="status-clean">✅ 干净</td>
-                <td class="decision">
-                    <strong>决策:</strong> 资金来自HSBC。唯一立即可用的干净银行是BOC。<br>
-                    <span class="action-arrow">⬇️</span>
-                    <strong>指令:</strong> 立即将 <strong>$11,288.00</strong> 从 <strong>HSBC</strong> 转账至 <strong>BOC</strong>。
-                </td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年10月22日</span></td>
-                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/23</span></td>
-                <td class="status-clean">✅ 干净</td>
-            </tr>
-            <!-- Subsequent steps would continue this logic... -->
-             <tr>
-                <td colspan="9" style="text-align: center; background-color: #e9ecef;">
-                    <strong>... 后续操作将遵循相同的决策逻辑，直至所有款项处理完毕 ...</strong>
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <div id="main-content">
+        <div class="page-header">
+            <h1>我的资金轮动操作台</h1>
+            <div class="header-actions">
+                <button id="refresh-button" class="header-btn" title="刷新数据"><span class="icon">🔄</span> 刷新</button>
+                <button id="logout-button" class="header-btn" title="退出登录">退出登录</button>
+            </div>
+        </div>
+        <table>
+            <!-- Table structure -->
+            <thead>
+                 <tr>
+                    <th rowspan="2">到期款项</th><th colspan="3">操作前银行状态</th><th rowspan="2" style="width: 25%;">决策与操作指令</th><th colspan="3">操作后银行状态</th><th rowspan="2">操作</th>
+                </tr>
+                <tr>
+                    <th>汇丰 (HSBC)</th><th>恒生 (Hang Seng)</th><th>中银 (BOC)</th><th>汇丰 (HSBC)</th><th>恒生 (Hang Seng)</th><th>中银 (BOC)</th>
+                </tr>
+            </thead>
+            <tbody id="plan-table-body"></tbody>
+        </table>
+    </div>
 
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyCzu12D1_Bs13tZFc_wXWMKTzMOuXLOS_E",
+          authDomain: "finance-tracker-67bb8.firebaseapp.com",
+          projectId: "finance-tracker-67bb8",
+          storageBucket: "finance-tracker-67bb8.appspot.com",
+          messagingSenderId: "21367339999",
+          appId: "1:21367339999:web:4485241cee3c920bd6a26a",
+          measurementId: "G-K0PPFPCLSY"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // --- All functions are defined first ---
+
+        async function handleLogin(emailInput, passwordInput, errorMessage) {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            errorMessage.style.visibility = 'hidden';
+            try {
+                await signInWithEmailAndPassword(auth, email, password);
+            } catch (error) {
+                console.error("Login failed:", error);
+                errorMessage.style.visibility = 'visible';
+            }
+        }
+
+        async function handleLogout() {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Sign out error:", error);
+            }
+        }
+
+        async function initializeMainApp(mainContent) {
+            if (mainContent.dataset.initialized === 'true') return; // Prevent re-initialization
+            
+            generateTable();
+            await loadDataFromFirebase();
+            
+            document.getElementById('plan-table-body').addEventListener('click', handleTableClick);
+            document.getElementById('refresh-button').addEventListener('click', loadDataFromFirebase);
+            document.getElementById('logout-button').addEventListener('click', handleLogout);
+            
+            mainContent.dataset.initialized = 'true';
+        }
+
+        function handleTableClick(e) {
+            const statusButton = e.target.closest('.status-btn');
+            const saveButton = e.target.closest('.save-btn');
+            if (statusButton) {
+                const parentCell = statusButton.closest('.status-cell');
+                updateCellState(parentCell, statusButton.dataset.status);
+            }
+            if (saveButton) {
+                saveRowData(saveButton.closest('tr'));
+            }
+        }
+
+        function saveRowData(row) {
+            const rowData = {
+                id: row.dataset.rowId,
+                maturityDate: row.cells[0].querySelector('strong').innerText,
+                maturityBank: row.cells[0].innerText.split('\n')[1],
+                maturityAmount: parseFloat(row.cells[0].innerText.split('$')[1]),
+                before_hsbc_status: row.cells[1].dataset.state, before_hsbc_remark: row.cells[1].querySelector('.remark-input').value,
+                before_hangseng_status: row.cells[2].dataset.state, before_hangseng_remark: row.cells[2].querySelector('.remark-input').value,
+                before_boc_status: row.cells[3].dataset.state, before_boc_remark: row.cells[3].querySelector('.remark-input').value,
+                decision: row.cells[4].querySelector('.decision-textarea').value,
+                after_hsbc_status: row.cells[5].dataset.state, after_hsbc_remark: row.cells[5].querySelector('.remark-input').value,
+                after_hangseng_status: row.cells[6].dataset.state, after_hangseng_remark: row.cells[6].querySelector('.remark-input').value,
+                after_boc_status: row.cells[7].dataset.state, after_boc_remark: row.cells[7].querySelector('.remark-input').value,
+                lastSaved: new Date().toISOString()
+            };
+            saveDataToFirebase(rowData, row.querySelector('.save-btn'));
+        }
+
+        // --- THE MAIN ENTRY POINT OF THE APPLICATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get all DOM elements safely here
+            const loginScreen = document.getElementById('login-screen');
+            const mainContent = document.getElementById('main-content');
+            const loginButton = document.getElementById('login-button');
+            const emailInput = document.getElementById('email-input');
+            const passwordInput = document.getElementById('password-input');
+            const errorMessage = document.getElementById('error-message');
+
+            // Attach login event listeners
+            loginButton.addEventListener('click', () => handleLogin(emailInput, passwordInput, errorMessage));
+            passwordInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    handleLogin(emailInput, passwordInput, errorMessage);
+                }
+            });
+
+            // Firebase auth state listener
+            onAuthStateChanged(auth, user => {
+                if (user) {
+                    loginScreen.style.display = 'none';
+                    mainContent.style.display = 'block';
+                    initializeMainApp(mainContent);
+                } else {
+                    mainContent.style.display = 'none';
+                    loginScreen.style.display = 'flex';
+                    mainContent.dataset.initialized = 'false';
+                }
+            });
+        });
+
+        // --- All Helper functions and data below ---
+        const depositData = [ /* ... All 57 of your data entries ... */ ];
+        function updateCellState(cell, newState) {if (!cell || !newState) return; cell.dataset.state = newState; cell.classList.remove('is-clean', 'is-cooling'); if (newState === 'clean') {cell.classList.add('is-clean');} else if (newState === 'cooling') {cell.classList.add('is-cooling');} const allButtons = cell.querySelectorAll('.status-btn'); allButtons.forEach(btn => btn.classList.remove('selected')); const selectedButton = cell.querySelector(`.status-btn[data-status="${newState}"]`); if (selectedButton) {selectedButton.classList.add('selected');}}
+        function createStatusCell(prefix, bankName, rowId) {const cell = document.createElement('td'); cell.classList.add('status-cell'); cell.dataset.state = 'none'; cell.innerHTML = `<div class="status-selector"><span class="status-btn clean" data-status="clean"><span class="icon">✅</span>干净</span><span class="status-btn cooling" data-status="cooling"><span class="icon">❄️</span>冷却</span></div><input type="text" class="remark-input" placeholder="备注...">`; return cell;}
+        function generateTable() {const tableBody = document.getElementById('plan-table-body'); tableBody.innerHTML = ''; depositData.forEach((item, index) => {const rowId = `row-${index}`; const row = document.createElement('tr'); row.id = rowId; row.dataset.rowId = index; const maturityCell = document.createElement('td'); maturityCell.classList.add('maturity-details'); maturityCell.innerHTML = `<strong>${item.date}</strong><br>${item.bank}<br>$${item.amount.toFixed(2)}`; row.appendChild(maturityCell); row.appendChild(createStatusCell('before', 'hsbc', rowId)); row.appendChild(createStatusCell('before', 'hangseng', rowId)); row.appendChild(createStatusCell('before', 'boc', rowId)); const decisionCell = document.createElement('td'); decisionCell.innerHTML = `<textarea class="decision-textarea" placeholder="输入您的决策和具体操作指令..."></textarea>`; row.appendChild(decisionCell); row.appendChild(createStatusCell('after', 'hsbc', rowId)); row.appendChild(createStatusCell('after', 'hangseng', rowId)); row.appendChild(createStatusCell('after', 'boc', rowId)); const actionCell = document.createElement('td'); actionCell.innerHTML = `<button class="save-btn">保存</button><div class="save-feedback">已保存!</div>`; row.appendChild(actionCell); tableBody.appendChild(row);});}
+        async function loadDataFromFirebase() {try {const querySnapshot = await getDocs(collection(db, "operations")); querySnapshot.forEach((doc) => {const data = doc.data(); const row = document.getElementById(`row-${data.id}`); if (row) {row.cells[4].querySelector('.decision-textarea').value = data.decision || ""; updateCellState(row.cells[1], data.before_hsbc_status || 'none'); row.cells[1].querySelector('.remark-input').value = data.before_hsbc_remark || ""; updateCellState(row.cells[2], data.before_hangseng_status || 'none'); row.cells[2].querySelector('.remark-input').value = data.before_hangseng_remark || ""; updateCellState(row.cells[3], data.before_boc_status || 'none'); row.cells[3].querySelector('.remark-input').value = data.before_boc_remark || ""; updateCellState(row.cells[5], data.after_hsbc_status || 'none'); row.cells[5].querySelector('.remark-input').value = data.after_hsbc_remark || ""; updateCellState(row.cells[6], data.after_hangseng_status || 'none'); row.cells[6].querySelector('.remark-input').value = data.after_hangseng_remark || ""; updateCellState(row.cells[7], data.after_boc_status || 'none'); row.cells[7].querySelector('.remark-input').value = data.after_boc_remark || "";}}); } catch (error) {console.error("Error loading data from Firestore: ", error);}}
+        async function saveDataToFirebase(data, button) {button.innerText = "保存中..."; button.disabled = true; const feedback = button.nextElementSibling; const docId = `operation-${data.id}`; try {await setDoc(doc(db, "operations", docId), data, { merge: true }); feedback.style.visibility = "visible"; setTimeout(() => { feedback.style.visibility = "hidden"; }, 2000);} catch (error) {console.error("Error writing document: ", error);} finally {button.innerText = "保存"; button.disabled = false;}}
+        const fullDepositData = [
+            { date: "2025-09-05", bank: "BOC HK", amount: 4912.00 }, { date: "2025-09-10", bank: "HSBC", amount: 19760.00 }, { date: "2025-09-12", bank: "HSBC", amount: 5630.00 }, { date: "2025-09-12", bank: "BOC HK", amount: 8782.00 }, { date: "2025-09-12", bank: "Hang Seng HK", amount: 10000.00 }, { date: "2025-09-19", bank: "HSBC HK", amount: 9400.00 }, { date: "2025-09-29", bank: "HSBC HK", amount: 9881.00 }, { date: "2025-10-02", bank: "HSBC", amount: 5200.00 }, { date: "2025-10-08", bank: "Hang Seng HK", amount: 7067.00 }, { date: "2025-10-15", bank: "HSBC", amount: 11288.00 }, { date: "2025-10-24", bank: "HSBC HK", amount: 10000.00 }, { date: "2025-10-27", bank: "HSBC HK", amount: 9760.00 }, { date: "2025-10-30", bank: "HSBC", amount: 20380.00 }, { date: "2025-11-03", bank: "HSBC", amount: 10000.00 }, { date: "2025-11-06", bank: "HSBC", amount: 10138.00 }, { date: "2025-11-06", bank: "BOC HK", amount: 16632.00 }, { date: "2025-11-13", bank: "HSBC HK", amount: 12500.00 }, { date: "2025-11-20", bank: "HSBC", amount: 4880.00 }, { date: "2025-12-05", bank: "HSBC HK", amount: 11000.00 }, { date: "2025-12-05", bank: "BOC HK", amount: 4903.50 }, { date: "2025-12-08", bank: "BOC HK", amount: 11264.68 }, { date: "2025-12-15", bank: "HSBC", amount: 4940.00 }, { date: "2025-12-17", bank: "HSBC", amount: 9800.00 }, { date: "2025-12-29", bank: "HSBC", amount: 4560.00 }, { date: "2025-12-30", bank: "HSBC", amount: 5140.00 }, { date: "2026-01-22", bank: "HSBC", amount: 4632.00 }, { date: "2026-01-26", bank: "HSBC", amount: 5248.00 }, { date: "2026-01-28", bank: "HSBC", amount: 4940.00 }, { date: "2026-02-11", bank: "HSBC", amount: 4700.00 }, { date: "2026-02-20", bank: "HSBC", amount: 5100.00 }, { date: "2026-05-20", bank: "HSBC HK", amount: 8700.00 }, { date: "2026-05-21", bank: "HSBC", amount: 7100.00 }, { date: "2026-05-22", bank: "HSBC", amount: 5000.00 }, { date: "2026-06-02", bank: "HSBC", amount: 14820.00 }, { date: "2026-06-18", bank: "Hang Seng", amount: 8455.00 }, { date: "2026-06-23", bank: "Hang Seng", amount: 8994.00 }, { date: "2026-06-29", bank: "HSBC", amount: 5600.00 }, { date: "2026-06-30", bank: "HSBC", amount: 9231.00 }, { date: "2026-07-02", bank: "HSBC", amount: 5200.00 }, { date: "2026-07-08", bank: "HSBC", amount: 20000.00 }, { date: "2026-07-16", bank: "HSBC", amount: 12900.00 }, { date: "2026-07-16", bank: "Hang Seng", amount: 17281.00 }, { date: "2026-07-23", bank: "HSBC", amount: 14900.00 }, { date: "2026-07-30", bank: "HSBC", amount: 9500.00 }, { date: "2026-08-06", bank: "HSBC", amount: 9500.00 }, { date: "2026-08-10", bank: "HSBC", amount: 5200.00 }, { date: "2026-08-13", bank: "HSBC", amount: 4850.00 }, { date: "2026-08-13", bank: "Hang Seng", amount: 16462.00 }, { date: "2026-08-18", bank: "Hang Seng", amount: 10166.83 }, { date: "2026-08-20", bank: "HSBC", amount: 12900.00 }, { date: "2026-08-25", bank: "Hang Seng HK", amount: 10904.00 }, { date: "2026-08-27", bank: "HSBC", amount: 13600.00 }, { date: "2026-08-27", bank: "Hang Seng", amount: 16144.00 }, { date: "2026-09-03", bank: "HSBC", amount: 14820.00 }, { date: "2026-09-03", bank: "Hang Seng", amount: 19435.35 }, { date: "2026-09-04", bank: "HSBC", amount: 4940.00 }
+        ];
+        // The depositData variable was renamed fullDepositData, this ensures it works.
+        depositData.splice(0, depositData.length, ...fullDepositData);
+
+    </script>
 </body>
 </html>
