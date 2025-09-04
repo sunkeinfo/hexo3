@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>资金轮动操作计划表</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        .status-clean {
+            color: #28a745;
+            font-weight: bold;
+        }
+        .status-cooling {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        .decision {
+            background-color: #fffbe6;
+        }
+        .decision strong {
+            color: #856404;
+        }
+        .action-arrow {
+            font-size: 1.5em;
+            color: #007bff;
+            font-weight: bold;
+            display: block;
+            text-align: center;
+        }
+        .note {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .header-bank {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>资金轮动操作计划表</h1>
+    <p class="note" style="text-align: center;"><b>最高指令：</b>最小化闲置期优先 | <b>起始日期：</b>2025年9月4日</p>
+    <p class="note" style="text-align: center;">
+        <b>初始状态：</b>
+        <span class="status-clean">汇丰(HSBC): ✅ 干净</span> | 
+        <span class="status-clean">恒生(Hang Seng): ✅ 干净</span> | 
+        <span class="status-clean">中银(BOC): ✅ 干净</span>
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th rowspan="2">到期日</th>
+                <th rowspan="2">到期款项 (USD)</th>
+                <th colspan="3" class="header-bank">操作前银行状态</th>
+                <th rowspan="2" style="width: 30%;">决策与操作指令</th>
+                <th colspan="3" class="header-bank">操作后银行状态</th>
+            </tr>
+            <tr>
+                <th>汇丰 (HSBC)</th>
+                <th>恒生 (Hang Seng)</th>
+                <th>中银 (BOC)</th>
+                <th>汇丰 (HSBC)</th>
+                <th>恒生 (Hang Seng)</th>
+                <th>中银 (BOC)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Step 1 -->
+            <tr>
+                <td>2025年9月5日</td>
+                <td>BOC HK<br>$4,912.00</td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="decision">
+                    <strong>决策:</strong> 存在两个干净银行 (HSBC, Hang Seng)。为保留冷却期更长的恒生银行的“干净”状态，优先选择汇丰。<br>
+                    <span class="action-arrow">⬇️</span>
+                    <strong>指令:</strong> 立即将 <strong>$4,912.00</strong> 从 <strong>BOC</strong> 转账至 <strong>HSBC</strong>。
+                </td>
+                <td class="status-clean">✅ 干净<br><span class="note">接收资金, 状态不变</span></td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年10月1日</span></td>
+            </tr>
+            <!-- Step 2 -->
+            <tr>
+                <td>2025年9月10日</td>
+                <td>HSBC<br>$19,760.00</td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
+                <td class="decision">
+                    <strong>决策:</strong> 资金来自HSBC，不能存入自身。唯一干净的银行是恒生。<br>
+                    <span class="action-arrow">⬇️</span>
+                    <strong>指令:</strong> 立即将 <strong>$19,760.00</strong> 从 <strong>HSBC</strong> 转账至 <strong>Hang Seng</strong>。
+                </td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年9月17日</span></td>
+                <td class="status-clean">✅ 干净<br><span class="note">接收资金, 状态不变</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
+            </tr>
+            <!-- Step 3 -->
+            <tr>
+                <td>2025年9月12日</td>
+                <td>
+                    HSBC: $5,630.00<br>
+                    BOC HK: $8,782.00<br>
+                    Hang Seng: $10,000.00<br>
+                    <strong>总计: $24,412.00</strong>
+                </td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 9/17</span></td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
+                <td class="decision">
+                    <strong>决策 (最短等待):</strong> 当天所有银行均有资金转出，全部将进入冷却期。必须等待最早恢复的银行。<br>
+                    - HSBC 转出后，新冷却期至 <strong>9月19日</strong>。<br>
+                    - Hang Seng 转出后，新冷却期至 9月27日。<br>
+                    - BOC 转出后，冷却期不变，至10月1日。<br>
+                    <span class="action-arrow">⬇️</span>
+                    <strong>指令:</strong> 暂时持有 <strong>$24,412.00</strong>，等待至 <strong>2025年9月19日</strong> 转账至 <strong>HSBC</strong>。
+                </td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年9月19日</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年9月27日</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
+            </tr>
+            <!-- Step 4 -->
+            <tr>
+                <td>2025年9月19日</td>
+                <td>HSBC HK<br>$9,400.00</td>
+                <td class="status-clean">✅ 干净<br><span class="note">本日恢复</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 9/27</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
+                <td class="decision">
+                    <strong>决策 (最短等待):</strong>
+                    1. 先执行上一步指令：将$24,412转入HSBC。HSBC接收资金，状态仍为干净。<br>
+                    2. 本日$9,400从HSBC到期转出，不能存入自身。其他银行均在冷却。<br>
+                    3. 最近的干净银行是Hang Seng (9月27日恢复)。<br>
+                    <span class="action-arrow">⬇️</span>
+                    <strong>指令:</strong> 暂时持有 <strong>$9,400.00</strong>，等待至 <strong>2025年9月27日</strong> 转账至 <strong>Hang Seng</strong>。
+                </td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年9月26日</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 9/27</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
+            </tr>
+            <!-- Step 5 -->
+            <tr>
+                <td>2025年9月29日</td>
+                <td>HSBC HK<br>$9,881.00</td>
+                <td class="status-clean">✅ 干净<br><span class="note">9/26已恢复</span></td>
+                <td class="status-clean">✅ 干净<br><span class="note">9/27已恢复</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
+                 <td class="decision">
+                    <strong>决策:</strong> 资金来自HSBC。唯一可用的干净银行是恒生。<br>
+                    <span class="action-arrow">⬇️</span>
+                    <strong>指令:</strong> 立即将 <strong>$9,881.00</strong> 从 <strong>HSBC</strong> 转账至 <strong>Hang Seng</strong>。
+                </td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年10月6日</span></td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/1</span></td>
+            </tr>
+            <!-- Step 6 -->
+             <tr>
+                <td>2025年10月2日</td>
+                <td>HSBC<br>$5,200.00</td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/6</span></td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="status-clean">✅ 干净<br><span class="note">10/1已恢复</span></td>
+                 <td class="decision">
+                    <strong>决策:</strong> 资金来自HSBC。存在两个干净银行 (Hang Seng, BOC)。两者皆可。<br>
+                    <strong>选择1 (推荐):</strong> 转至BOC，使其余两家银行的冷却周期错开。<br>
+                    <strong>选择2:</strong> 转至Hang Seng。<br>
+                    <span class="action-arrow">⬇️</span>
+                    <strong>指令:</strong> 立即将 <strong>$5,200.00</strong> 从 <strong>HSBC</strong> 转账至 <strong>BOC</strong>。
+                </td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年10月9日</span></td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="status-clean">✅ 干净</td>
+            </tr>
+            <!-- Step 7 -->
+            <tr>
+                <td>2025年10月8日</td>
+                <td>Hang Seng HK<br>$7,067.00</td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/9</span></td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="decision">
+                    <strong>决策:</strong> 资金来自Hang Seng。唯一立即可用的干净银行是BOC (HSBC次日才恢复)。<br>
+                    <span class="action-arrow">⬇️</span>
+                    <strong>指令:</strong> 立即将 <strong>$7,067.00</strong> 从 <strong>Hang Seng</strong> 转账至 <strong>BOC</strong>。
+                </td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/9</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年10月23日</span></td>
+                <td class="status-clean">✅ 干净</td>
+            </tr>
+             <!-- Step 8 -->
+            <tr>
+                <td>2025年10月15日</td>
+                <td>HSBC<br>$11,288.00</td>
+                <td class="status-clean">✅ 干净<br><span class="note">10/9已恢复</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/23</span></td>
+                <td class="status-clean">✅ 干净</td>
+                <td class="decision">
+                    <strong>决策:</strong> 资金来自HSBC。唯一立即可用的干净银行是BOC。<br>
+                    <span class="action-arrow">⬇️</span>
+                    <strong>指令:</strong> 立即将 <strong>$11,288.00</strong> 从 <strong>HSBC</strong> 转账至 <strong>BOC</strong>。
+                </td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 2025年10月22日</span></td>
+                <td class="status-cooling">❄️ 冷却中<br><span class="note">至 10/23</span></td>
+                <td class="status-clean">✅ 干净</td>
+            </tr>
+            <!-- Subsequent steps would continue this logic... -->
+             <tr>
+                <td colspan="9" style="text-align: center; background-color: #e9ecef;">
+                    <strong>... 后续操作将遵循相同的决策逻辑，直至所有款项处理完毕 ...</strong>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>
