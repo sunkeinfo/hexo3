@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的资金轮动操作台 (V8.3 - 最终稳定版)</title>
+    <title>我的资金轮动操作台 (V10 - 集成新增行)</title>
     <style>
-        /* CSS styles are the same */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f0f2f5; margin: 0; padding: 20px; font-size: 13px; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; }
-        .page-header h1 { color: #0056b3; margin: 0; }
-        .header-actions { display: flex; gap: 10px; }
-        .header-btn { background: none; border: 1px solid #007bff; color: #007bff; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-size: 1em; display: flex; align-items: center; gap: 5px; }
-        .header-btn:hover { background-color: #e7f3ff; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; padding: 0 10px; flex-wrap: wrap; }
+        .page-header h1 { color: #0056b3; margin: 10px 0; }
+        .header-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+        .header-btn, .action-btn { background: #fff; border: 1px solid #007bff; color: #007bff; border-radius: 5px; padding: 5px 10px; cursor: pointer; font-size: 1em; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+        .header-btn:hover, .action-btn:hover { background-color: #e7f3ff; }
         .header-btn .icon { font-size: 1.5em; }
         #login-screen { display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.5); z-index: 1000; }
         .login-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); width: 320px; text-align: center; }
@@ -20,11 +19,17 @@
         .login-container button { width: 100%; padding: 10px; border: none; border-radius: 4px; background-color: #007bff; color: white; font-size: 1.1em; cursor: pointer; }
         .login-container .error-message { color: red; margin-top: 10px; visibility: hidden; }
         #main-content { display: none; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); background: #fff; }
         th, td { border: 1px solid #dee2e6; padding: 8px; text-align: center; vertical-align: top; }
         th { background-color: #007bff; color: white; font-weight: bold; position: relative; }
-        tbody tr:nth-child(even) { background-color: #f2f2f2; }
+        tbody tr:nth-child(even) { background-color: #f8f9fa; }
         tbody tr:hover { background-color: #e9ecef; }
+        tfoot tr { background-color: #fdfdff; border-top: 2px solid #007bff; }
+        tfoot td { padding: 12px 8px; }
+        tfoot .input-group { display: flex; flex-direction: column; gap: 4px; align-items: stretch; }
+        tfoot .input-group input { width: 95%; padding: 6px; border: 1px solid #ccc; border-radius: 4px; font-size: 1em; }
+        .add-btn { background-color: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1em; transition: background-color 0.2s; }
+        .add-btn:hover { background-color: #c82333; }
         .maturity-details { text-align: left; }
         .status-cell { padding: 4px; }
         .status-selector { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
@@ -58,12 +63,14 @@
         <div class="page-header">
             <h1>我的资金轮动操作台</h1>
             <div class="header-actions">
-                <button id="refresh-button" class="header-btn" title="刷新数据"><span class="icon">🔄</span> 刷新</button>
-                <button id="logout-button" class="header-btn" title="退出登录">退出登录</button>
+                <button id="import-btn" class="header-btn">📥 导入CSV</button>
+                <button id="export-btn" class="header-btn">📤 导出CSV</button>
+                <button id="refresh-button" class="header-btn"><span class="icon">🔄</span> 刷新</button>
+                <button id="logout-button" class="header-btn">退出登录</button>
             </div>
         </div>
+        
         <table>
-            <!-- Table structure -->
             <thead>
                  <tr>
                     <th rowspan="2">到期款项</th><th colspan="3">操作前银行状态</th><th rowspan="2" style="width: 25%;">决策与操作指令</th><th colspan="3">操作后银行状态</th><th rowspan="2">操作</th>
@@ -73,15 +80,31 @@
                 </tr>
             </thead>
             <tbody id="plan-table-body"></tbody>
+            <tfoot>
+                <tr>
+                    <td>
+                        <div class="input-group">
+                            <input type="date" id="new-date" required>
+                            <input type="text" id="new-bank" placeholder="银行 (例如: HSBC)" required>
+                            <input type="number" id="new-amount" step="0.01" placeholder="金额 (USD)" required>
+                        </div>
+                    </td>
+                    <td colspan="6"></td>
+                    <td>
+                        <button id="add-new-btn" class="add-btn">添加到数据库</button>
+                    </td>
+                </tr>
+            </tfoot>
         </table>
+        
+        <input type="file" id="import-file-input" style="display: none;" accept=".csv">
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-        import { getFirestore, doc, setDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, collection, getDocs, addDoc, query, orderBy, writeBatch } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
 
-        // --- Firebase Configuration ---
         const firebaseConfig = {
           apiKey: "AIzaSyCzu12D1_Bs13tZFc_wXWMKTzMOuXLOS_E",
           authDomain: "finance-tracker-67bb8.firebaseapp.com",
@@ -95,38 +118,33 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-
-        // --- All functions are defined first ---
+        const operationsCollection = collection(db, "operations");
 
         async function handleLogin(emailInput, passwordInput, errorMessage) {
-            const email = emailInput.value;
-            const password = passwordInput.value;
             errorMessage.style.visibility = 'hidden';
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-            } catch (error) {
-                console.error("Login failed:", error);
-                errorMessage.style.visibility = 'visible';
-            }
+            try { await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value); } 
+            catch (error) { console.error("Login failed:", error); errorMessage.style.visibility = 'visible'; }
         }
 
         async function handleLogout() {
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error("Sign out error:", error);
-            }
+            try { await signOut(auth); } catch (error) { console.error("Sign out error:", error); }
         }
 
         async function initializeMainApp(mainContent) {
-            if (mainContent.dataset.initialized === 'true') return; // Prevent re-initialization
+            if (mainContent.dataset.initialized === 'true') return;
             
-            generateTable();
-            await loadDataFromFirebase();
+            const tableBody = document.getElementById('plan-table-body');
+            const importFileInput = document.getElementById('import-file-input');
+
+            await loadAndRenderTableFromFirebase(tableBody);
             
             document.getElementById('plan-table-body').addEventListener('click', handleTableClick);
-            document.getElementById('refresh-button').addEventListener('click', loadDataFromFirebase);
+            document.getElementById('refresh-button').addEventListener('click', () => loadAndRenderTableFromFirebase(tableBody));
             document.getElementById('logout-button').addEventListener('click', handleLogout);
+            document.getElementById('export-btn').addEventListener('click', handleExport);
+            document.getElementById('import-btn').addEventListener('click', () => importFileInput.click());
+            document.getElementById('add-new-btn').addEventListener('click', () => handleAddNew(tableBody));
+            importFileInput.addEventListener('change', (e) => handleImport(e, importFileInput, tableBody));
             
             mainContent.dataset.initialized = 'true';
         }
@@ -135,20 +153,20 @@
             const statusButton = e.target.closest('.status-btn');
             const saveButton = e.target.closest('.save-btn');
             if (statusButton) {
-                const parentCell = statusButton.closest('.status-cell');
-                updateCellState(parentCell, statusButton.dataset.status);
+                updateCellState(statusButton.closest('.status-cell'), statusButton.dataset.status);
             }
             if (saveButton) {
                 saveRowData(saveButton.closest('tr'));
             }
         }
 
-        function saveRowData(row) {
+        async function saveRowData(row) {
+            const docId = row.dataset.docId;
+            if (!docId) return;
             const rowData = {
-                id: row.dataset.rowId,
-                maturityDate: row.cells[0].querySelector('strong').innerText,
-                maturityBank: row.cells[0].innerText.split('\n')[1],
-                maturityAmount: parseFloat(row.cells[0].innerText.split('$')[1]),
+                date: row.querySelector('.maturity-details strong').innerText,
+                bank: row.querySelector('.maturity-details').innerText.split('\n')[1],
+                amount: parseFloat(row.querySelector('.maturity-details').innerText.split('$')[1]),
                 before_hsbc_status: row.cells[1].dataset.state, before_hsbc_remark: row.cells[1].querySelector('.remark-input').value,
                 before_hangseng_status: row.cells[2].dataset.state, before_hangseng_remark: row.cells[2].querySelector('.remark-input').value,
                 before_boc_status: row.cells[3].dataset.state, before_boc_remark: row.cells[3].querySelector('.remark-input').value,
@@ -156,14 +174,123 @@
                 after_hsbc_status: row.cells[5].dataset.state, after_hsbc_remark: row.cells[5].querySelector('.remark-input').value,
                 after_hangseng_status: row.cells[6].dataset.state, after_hangseng_remark: row.cells[6].querySelector('.remark-input').value,
                 after_boc_status: row.cells[7].dataset.state, after_boc_remark: row.cells[7].querySelector('.remark-input').value,
-                lastSaved: new Date().toISOString()
             };
-            saveDataToFirebase(rowData, row.querySelector('.save-btn'));
+            await saveDataToFirebase(docId, rowData, row.querySelector('.save-btn'));
         }
 
-        // --- THE MAIN ENTRY POINT OF THE APPLICATION ---
+        async function loadAndRenderTableFromFirebase(tableBody) {
+            tableBody.innerHTML = '<tr><td colspan="8">加载中...</td></tr>';
+            const q = query(operationsCollection, orderBy("date", "asc"));
+            const querySnapshot = await getDocs(q);
+            tableBody.innerHTML = '';
+            if (querySnapshot.empty) {
+                tableBody.innerHTML = '<tr><td colspan="8">数据库中没有数据。请使用“导入”功能添加初始数据。</td></tr>';
+                return;
+            }
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const docId = doc.id;
+                const row = document.createElement('tr');
+                row.dataset.docId = docId;
+                const maturityCell = document.createElement('td');
+                maturityCell.classList.add('maturity-details');
+                maturityCell.innerHTML = `<strong>${data.date}</strong><br>${data.bank}<br>$${Number(data.amount).toFixed(2)}`;
+                row.appendChild(maturityCell);
+                row.appendChild(createStatusCell()); row.appendChild(createStatusCell()); row.appendChild(createStatusCell());
+                const decisionCell = document.createElement('td');
+                decisionCell.innerHTML = `<textarea class="decision-textarea"></textarea>`;
+                row.appendChild(decisionCell);
+                row.appendChild(createStatusCell()); row.appendChild(createStatusCell()); row.appendChild(createStatusCell());
+                const actionCell = document.createElement('td');
+                actionCell.innerHTML = `<button class="save-btn">保存</button><div class="save-feedback">已保存!</div>`;
+                row.appendChild(actionCell);
+                tableBody.appendChild(row);
+                row.cells[4].querySelector('.decision-textarea').value = data.decision || "";
+                updateCellState(row.cells[1], data.before_hsbc_status || 'none'); row.cells[1].querySelector('.remark-input').value = data.before_hsbc_remark || "";
+                updateCellState(row.cells[2], data.before_hangseng_status || 'none'); row.cells[2].querySelector('.remark-input').value = data.before_hangseng_remark || "";
+                updateCellState(row.cells[3], data.before_boc_status || 'none'); row.cells[3].querySelector('.remark-input').value = data.before_boc_remark || "";
+                updateCellState(row.cells[5], data.after_hsbc_status || 'none'); row.cells[5].querySelector('.remark-input').value = data.after_hsbc_remark || "";
+                updateCellState(row.cells[6], data.after_hangseng_status || 'none'); row.cells[6].querySelector('.remark-input').value = data.after_hangseng_remark || "";
+                updateCellState(row.cells[7], data.after_boc_status || 'none'); row.cells[7].querySelector('.remark-input').value = data.after_boc_remark || "";
+            });
+        }
+        
+        async function handleAddNew(tableBody) {
+            const newDate = document.getElementById('new-date').value;
+            const newBank = document.getElementById('new-bank').value;
+            const newAmount = parseFloat(document.getElementById('new-amount').value);
+            if (!newDate || !newBank || isNaN(newAmount) || newAmount <= 0) { alert("请在表格底部的“新增行”中正确填写所有字段。"); return; }
+            try {
+                await addDoc(operationsCollection, { date: newDate, bank: newBank, amount: newAmount, before_hsbc_status: 'none', before_hsbc_remark: '', before_hangseng_status: 'none', before_hangseng_remark: '', before_boc_status: 'none', before_boc_remark: '', decision: '', after_hsbc_status: 'none', after_hsbc_remark: '', after_hangseng_status: 'none', after_hangseng_remark: '', after_boc_status: 'none', after_boc_remark: '' });
+                document.getElementById('new-date').value = '';
+                document.getElementById('new-bank').value = '';
+                document.getElementById('new-amount').value = '';
+                await loadAndRenderTableFromFirebase(tableBody);
+            } catch (error) { console.error("Error adding new document: ", error); alert("新增失败。"); }
+        }
+
+        async function handleExport() {
+            const q = query(operationsCollection, orderBy("date", "asc"));
+            const querySnapshot = await getDocs(q);
+            if (querySnapshot.empty) { alert("没有数据可以导出。"); return; }
+            const headers = ["date", "bank", "amount", "decision", "before_hsbc_status", "before_hsbc_remark", "before_hangseng_status", "before_hangseng_remark", "before_boc_status", "before_boc_remark", "after_hsbc_status", "after_hsbc_remark", "after_hangseng_status", "after_hangseng_remark", "after_boc_status", "after_boc_remark"];
+            let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n";
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const row = headers.map(header => `"${(data[header] || '').toString().replace(/"/g, '""')}"`);
+                csvContent += row.join(",") + "\n";
+            });
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `operations_export_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        async function handleImport(event, importFileInput, tableBody) {
+            const file = event.target.files[0];
+            if (!file) return;
+            if (!confirm("警告：导入将删除所有现有云端数据，并用文件中的内容覆盖。确定要继续吗？")) {
+                importFileInput.value = ""; return;
+            }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const existingDocs = await getDocs(operationsCollection);
+                    const deleteBatch = writeBatch(db);
+                    existingDocs.forEach(doc => deleteBatch.delete(doc.ref));
+                    await deleteBatch.commit();
+                    const text = e.target.result;
+                    const lines = text.split(/\r\n|\n/).filter(line => line.trim() !== '');
+                    if (lines.length <= 1) { alert("CSV文件为空或只有表头。"); return; }
+                    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                    const addBatch = writeBatch(db);
+                    for (let i = 1; i < lines.length; i++) {
+                        const values = lines[i].split(',');
+                        const obj = {};
+                        headers.forEach((header, index) => {
+                            let value = values[index] || '';
+                            if (value.startsWith('"') && value.endsWith('"')) { value = value.substring(1, value.length - 1).replace(/""/g, '"'); }
+                            obj[header] = header === 'amount' ? parseFloat(value) : value;
+                        });
+                        addBatch.set(doc(operationsCollection), obj);
+                    }
+                    await addBatch.commit();
+                    alert(`成功导入 ${lines.length - 1} 条记录。`);
+                    await loadAndRenderTableFromFirebase(tableBody);
+                } catch (err) { console.error("Import failed: ", err); alert("导入失败，请确保CSV文件格式正确。"); } 
+                finally { importFileInput.value = ""; }
+            };
+            reader.readAsText(file);
+        }
+
+        function updateCellState(cell, newState) { if (!cell || !newState) return; cell.dataset.state = newState; cell.classList.remove('is-clean', 'is-cooling'); if (newState === 'clean') {cell.classList.add('is-clean');} else if (newState === 'cooling') {cell.classList.add('is-cooling');} const allButtons = cell.querySelectorAll('.status-btn'); allButtons.forEach(btn => btn.classList.remove('selected')); const selectedButton = cell.querySelector(`.status-btn[data-status="${newState}"]`); if (selectedButton) {selectedButton.classList.add('selected');} }
+        function createStatusCell() { const cell = document.createElement('td'); cell.classList.add('status-cell'); cell.dataset.state = 'none'; cell.innerHTML = `<div class="status-selector"><span class="status-btn clean" data-status="clean"><span class="icon">✅</span>干净</span><span class="status-btn cooling" data-status="cooling"><span class="icon">❄️</span>冷却</span></div><input type="text" class="remark-input" placeholder="备注...">`; return cell; }
+        async function saveDataToFirebase(docId, data, button) { button.innerText = "保存中..."; button.disabled = true; const feedback = button.nextElementSibling; try { await setDoc(doc(db, "operations", docId), data, { merge: true }); feedback.style.visibility = "visible"; setTimeout(() => { feedback.style.visibility = "hidden"; }, 2000); } catch (error) { console.error("Error writing document: ", error); } finally { button.innerText = "保存"; button.disabled = false; } }
+        
         document.addEventListener('DOMContentLoaded', () => {
-            // Get all DOM elements safely here
             const loginScreen = document.getElementById('login-screen');
             const mainContent = document.getElementById('main-content');
             const loginButton = document.getElementById('login-button');
@@ -171,15 +298,9 @@
             const passwordInput = document.getElementById('password-input');
             const errorMessage = document.getElementById('error-message');
 
-            // Attach login event listeners
             loginButton.addEventListener('click', () => handleLogin(emailInput, passwordInput, errorMessage));
-            passwordInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    handleLogin(emailInput, passwordInput, errorMessage);
-                }
-            });
+            passwordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleLogin(emailInput, passwordInput, errorMessage); });
 
-            // Firebase auth state listener
             onAuthStateChanged(auth, user => {
                 if (user) {
                     loginScreen.style.display = 'none';
@@ -192,20 +313,6 @@
                 }
             });
         });
-
-        // --- All Helper functions and data below ---
-        const depositData = [ /* ... All 57 of your data entries ... */ ];
-        function updateCellState(cell, newState) {if (!cell || !newState) return; cell.dataset.state = newState; cell.classList.remove('is-clean', 'is-cooling'); if (newState === 'clean') {cell.classList.add('is-clean');} else if (newState === 'cooling') {cell.classList.add('is-cooling');} const allButtons = cell.querySelectorAll('.status-btn'); allButtons.forEach(btn => btn.classList.remove('selected')); const selectedButton = cell.querySelector(`.status-btn[data-status="${newState}"]`); if (selectedButton) {selectedButton.classList.add('selected');}}
-        function createStatusCell(prefix, bankName, rowId) {const cell = document.createElement('td'); cell.classList.add('status-cell'); cell.dataset.state = 'none'; cell.innerHTML = `<div class="status-selector"><span class="status-btn clean" data-status="clean"><span class="icon">✅</span>干净</span><span class="status-btn cooling" data-status="cooling"><span class="icon">❄️</span>冷却</span></div><input type="text" class="remark-input" placeholder="备注...">`; return cell;}
-        function generateTable() {const tableBody = document.getElementById('plan-table-body'); tableBody.innerHTML = ''; depositData.forEach((item, index) => {const rowId = `row-${index}`; const row = document.createElement('tr'); row.id = rowId; row.dataset.rowId = index; const maturityCell = document.createElement('td'); maturityCell.classList.add('maturity-details'); maturityCell.innerHTML = `<strong>${item.date}</strong><br>${item.bank}<br>$${item.amount.toFixed(2)}`; row.appendChild(maturityCell); row.appendChild(createStatusCell('before', 'hsbc', rowId)); row.appendChild(createStatusCell('before', 'hangseng', rowId)); row.appendChild(createStatusCell('before', 'boc', rowId)); const decisionCell = document.createElement('td'); decisionCell.innerHTML = `<textarea class="decision-textarea" placeholder="输入您的决策和具体操作指令..."></textarea>`; row.appendChild(decisionCell); row.appendChild(createStatusCell('after', 'hsbc', rowId)); row.appendChild(createStatusCell('after', 'hangseng', rowId)); row.appendChild(createStatusCell('after', 'boc', rowId)); const actionCell = document.createElement('td'); actionCell.innerHTML = `<button class="save-btn">保存</button><div class="save-feedback">已保存!</div>`; row.appendChild(actionCell); tableBody.appendChild(row);});}
-        async function loadDataFromFirebase() {try {const querySnapshot = await getDocs(collection(db, "operations")); querySnapshot.forEach((doc) => {const data = doc.data(); const row = document.getElementById(`row-${data.id}`); if (row) {row.cells[4].querySelector('.decision-textarea').value = data.decision || ""; updateCellState(row.cells[1], data.before_hsbc_status || 'none'); row.cells[1].querySelector('.remark-input').value = data.before_hsbc_remark || ""; updateCellState(row.cells[2], data.before_hangseng_status || 'none'); row.cells[2].querySelector('.remark-input').value = data.before_hangseng_remark || ""; updateCellState(row.cells[3], data.before_boc_status || 'none'); row.cells[3].querySelector('.remark-input').value = data.before_boc_remark || ""; updateCellState(row.cells[5], data.after_hsbc_status || 'none'); row.cells[5].querySelector('.remark-input').value = data.after_hsbc_remark || ""; updateCellState(row.cells[6], data.after_hangseng_status || 'none'); row.cells[6].querySelector('.remark-input').value = data.after_hangseng_remark || ""; updateCellState(row.cells[7], data.after_boc_status || 'none'); row.cells[7].querySelector('.remark-input').value = data.after_boc_remark || "";}}); } catch (error) {console.error("Error loading data from Firestore: ", error);}}
-        async function saveDataToFirebase(data, button) {button.innerText = "保存中..."; button.disabled = true; const feedback = button.nextElementSibling; const docId = `operation-${data.id}`; try {await setDoc(doc(db, "operations", docId), data, { merge: true }); feedback.style.visibility = "visible"; setTimeout(() => { feedback.style.visibility = "hidden"; }, 2000);} catch (error) {console.error("Error writing document: ", error);} finally {button.innerText = "保存"; button.disabled = false;}}
-        const fullDepositData = [
-            { date: "2025-09-05", bank: "BOC HK", amount: 4912.00 }, { date: "2025-09-10", bank: "HSBC", amount: 19760.00 }, { date: "2025-09-12", bank: "HSBC", amount: 5630.00 }, { date: "2025-09-12", bank: "BOC HK", amount: 8782.00 }, { date: "2025-09-12", bank: "Hang Seng HK", amount: 10000.00 }, { date: "2025-09-19", bank: "HSBC HK", amount: 9400.00 }, { date: "2025-09-29", bank: "HSBC HK", amount: 9881.00 }, { date: "2025-10-02", bank: "HSBC", amount: 5200.00 }, { date: "2025-10-08", bank: "Hang Seng HK", amount: 7067.00 }, { date: "2025-10-15", bank: "HSBC", amount: 11288.00 }, { date: "2025-10-24", bank: "HSBC HK", amount: 10000.00 }, { date: "2025-10-27", bank: "HSBC HK", amount: 9760.00 }, { date: "2025-10-30", bank: "HSBC", amount: 20380.00 }, { date: "2025-11-03", bank: "HSBC", amount: 10000.00 }, { date: "2025-11-06", bank: "HSBC", amount: 10138.00 }, { date: "2025-11-06", bank: "BOC HK", amount: 16632.00 }, { date: "2025-11-13", bank: "HSBC HK", amount: 12500.00 }, { date: "2025-11-20", bank: "HSBC", amount: 4880.00 }, { date: "2025-12-05", bank: "HSBC HK", amount: 11000.00 }, { date: "2025-12-05", bank: "BOC HK", amount: 4903.50 }, { date: "2025-12-08", bank: "BOC HK", amount: 11264.68 }, { date: "2025-12-15", bank: "HSBC", amount: 4940.00 }, { date: "2025-12-17", bank: "HSBC", amount: 9800.00 }, { date: "2025-12-29", bank: "HSBC", amount: 4560.00 }, { date: "2025-12-30", bank: "HSBC", amount: 5140.00 }, { date: "2026-01-22", bank: "HSBC", amount: 4632.00 }, { date: "2026-01-26", bank: "HSBC", amount: 5248.00 }, { date: "2026-01-28", bank: "HSBC", amount: 4940.00 }, { date: "2026-02-11", bank: "HSBC", amount: 4700.00 }, { date: "2026-02-20", bank: "HSBC", amount: 5100.00 }, { date: "2026-05-20", bank: "HSBC HK", amount: 8700.00 }, { date: "2026-05-21", bank: "HSBC", amount: 7100.00 }, { date: "2026-05-22", bank: "HSBC", amount: 5000.00 }, { date: "2026-06-02", bank: "HSBC", amount: 14820.00 }, { date: "2026-06-18", bank: "Hang Seng", amount: 8455.00 }, { date: "2026-06-23", bank: "Hang Seng", amount: 8994.00 }, { date: "2026-06-29", bank: "HSBC", amount: 5600.00 }, { date: "2026-06-30", bank: "HSBC", amount: 9231.00 }, { date: "2026-07-02", bank: "HSBC", amount: 5200.00 }, { date: "2026-07-08", bank: "HSBC", amount: 20000.00 }, { date: "2026-07-16", bank: "HSBC", amount: 12900.00 }, { date: "2026-07-16", bank: "Hang Seng", amount: 17281.00 }, { date: "2026-07-23", bank: "HSBC", amount: 14900.00 }, { date: "2026-07-30", bank: "HSBC", amount: 9500.00 }, { date: "2026-08-06", bank: "HSBC", amount: 9500.00 }, { date: "2026-08-10", bank: "HSBC", amount: 5200.00 }, { date: "2026-08-13", bank: "HSBC", amount: 4850.00 }, { date: "2026-08-13", bank: "Hang Seng", amount: 16462.00 }, { date: "2026-08-18", bank: "Hang Seng", amount: 10166.83 }, { date: "2026-08-20", bank: "HSBC", amount: 12900.00 }, { date: "2026-08-25", bank: "Hang Seng HK", amount: 10904.00 }, { date: "2026-08-27", bank: "HSBC", amount: 13600.00 }, { date: "2026-08-27", bank: "Hang Seng", amount: 16144.00 }, { date: "2026-09-03", bank: "HSBC", amount: 14820.00 }, { date: "2026-09-03", bank: "Hang Seng", amount: 19435.35 }, { date: "2026-09-04", bank: "HSBC", amount: 4940.00 }
-        ];
-        // The depositData variable was renamed fullDepositData, this ensures it works.
-        depositData.splice(0, depositData.length, ...fullDepositData);
-
     </script>
 </body>
 </html>
