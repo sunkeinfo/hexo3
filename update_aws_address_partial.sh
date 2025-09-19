@@ -1,10 +1,12 @@
 #!/bin/bash
 
 # -----------------------------------------------------------------------------
-# 脚本: update_and_delete_tax_auto.sh
-# 描述: 自动更新AWS账户联系地址，然后无条件地尝试删除所有税务信息，
-#       并明确返回操作结果。
-# 依赖: aws-cli, jq
+# 脚本: update_and_delete_tax_smart.sh
+# 描述: 自动更新AWS账户联系地址，然后智能地删除税务信息，并汇报详细结果。
+#
+# !!! 重要前提 !!!
+# 此脚本必须在 AWS `us-east-1` (弗吉尼亚北部) 区域运行。
+# 如果您在 CloudShell 中使用，请务必先将区域切换到 us-east-1。
 # -----------------------------------------------------------------------------
 
 # 如果任何命令失败（除了我们手动处理的错误），则立即退出
@@ -15,55 +17,34 @@ set -o pipefail
 command -v aws >/dev/null 2>&1 || { echo >&2 "错误：找不到 'aws' 命令。请先安装 AWS CLI。"; exit 1; }
 command -v jq >/dev/null 2>&1 || { echo >&2 "错误：找不到 'jq' 命令。请先安装 jq。"; exit 1; }
 
-# --- 定义要修改的值 ---
-NEW_STATE="CA"
-NEW_POSTAL_CODE="90000"
-NEW_COUNTRY_CODE="US"
-
 # --- 第 1-3 步：更新联系信息 ---
-echo "第 1 步：正在获取当前联系信息..."
-CURRENT_INFO=$(aws account get-contact-information --output json)
-if [ -z "$CURRENT_INFO" ]; then
-    echo "错误：无法从 AWS 获取联系信息。"
-    exit 1
-fi
+echo "第 1-3 步：正在更新联系地址..."
+CURRENT_INFO=$(aws account get-contact-information)
 CONTACT_INFO_JSON=$(echo "$CURRENT_INFO" | jq '.ContactInformation')
-echo "获取成功！"
-echo ""
-
-echo "第 2 步：正在准备更新数据..."
 UPDATED_INFO_JSON=$(echo "$CONTACT_INFO_JSON" | jq \
-  --arg state "$NEW_STATE" \
-  --arg postal_code "$NEW_POSTAL_CODE" \
-  --arg country_code "$NEW_COUNTRY_CODE" \
-  '.StateOrRegion = $state | .PostalCode = $postal_code | .CountryCode = $country_code'
+  '.StateOrRegion = "CA" | .PostalCode = "90000" | .CountryCode = "US"'
 )
-echo "数据准备完毕。"
-echo ""
-
-echo "第 3 步：正在提交更新后的联系信息..."
 aws account put-contact-information --contact-information "$UPDATED_INFO_JSON"
 echo "✅ 联系地址更新已自动完成！"
 echo ""
 echo "--------------------------------------------------"
 echo ""
 
-# --- 第 4 步：直接删除税务信息并返回结果 ---
-echo "第 4 步：正在直接删除税务信息并报告结果..."
+# --- 第 4 步：智能执行删除命令并汇报结果 ---
+echo "第 4 步：正在执行删除税务信息命令并汇报结果..."
 
-# 设置一个变量来捕获命令的输出和错误信息
-# 2>&1 将标准错误（stderr）重定向到标准输出（stdout），以便我们可以捕获所有信息
-# || true 确保即使aws命令失败，set -e也不会终止整个脚本
-command_output=$(aws tax delete-tax-registration 2>&1)
-exit_code=$? # 获取aws命令的退出码
+# 执行命令，同时捕获其所有输出（包括正常和错误信息）
+# `2>&1` 是关键，它将错误流合并到标准输出流，以便下面可以完整捕获
+command_output=$(aws taxsettings delete-tax-registration 2>&1)
+exit_code=$? # 立刻获取刚刚执行的aws命令的退出码 (0代表成功，非0代表失败)
 
-# 检查退出码来判断命令是否成功
+# 根据退出码判断并汇报结果
 if [ $exit_code -eq 0 ]; then
     # 退出码为0，表示成功
-    echo "✅ 操作成功：税务信息已成功删除。"
-    # 如果成功时有任何输出，也一并打印（通常此命令成功时无输出）
+    echo "✅ 操作成功：删除税务信息的命令已成功执行。"
+    # AWS官方说明成功时无输出，但我们仍然检查一下以防万一
     if [ -n "$command_output" ]; then
-        echo "AWS 返回信息："
+        echo "AWS 返回了如下信息："
         echo "$command_output"
     fi
 else
@@ -72,7 +53,10 @@ else
     echo "-------------------- AWS CLI 返回的原始结果 --------------------"
     echo "$command_output"
     echo "-----------------------------------------------------------------"
-    echo "请检查以上由AWS返回的错误信息以定位问题（例如权限不足或无税务信息可删）。"
+    echo "请检查以上由AWS直接返回的错误信息以定位问题。常见原因包括："
+    echo "  1. 权限不足：请确保您的IAM用户/角色拥有 'tax:DeleteTaxRegistration' 权限。"
+    echo "  2. 账户中无税务信息：如果错误信息包含 'TaxRegistrationNotFoundException'，说明原本就没有税务信息可删，可以安全地忽略此错误。"
+    echo "  3. 运行区域错误：请再次确认您当前是否在 'us-east-1' 区域。"
 fi
 
 echo ""
