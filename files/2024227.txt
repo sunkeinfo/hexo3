@@ -3,4 +3,5 @@ vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@54.169.80.155:1114?security=reality
 vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@18.163.84.74:1114?type=tcp&encryption=none&security=reality&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&fp=firefox&sni=yahoo.com&sid=79a1e14b&spx=%2F&flow=xtls-rprx-vision#HK-KR
 vless://a8df0ae3-355c-49f4-8a41-17256edd940b@18.163.84.74:65533?type=tcp&encryption=none&security=reality&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&fp=firefox&sni=yahoo.com&sid=79a1e14b&spx=%2F#HK-65533
 vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@18.163.84.74:65532?type=tcp&encryption=none&security=reality&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&fp=firefox&sni=apple.com&sid=79a1e14b&spx=%2F&flow=xtls-rprx-vision#65532-HK-warp-US
+vless://fb95f656-bf34-41e6-8cfd-9bda2d340e5e@18.163.84.74:35420?type=tcp&encryption=none&security=reality&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&fp=firefox&sni=yahoo.com&sid=79a1e14b&spx=%2F#1114%20-%20HK-HK
 hysteria2://df9b2a88@52.39.11.107:60512/?insecure=1&sni=www.bing.com#Hysteria2-misaka
