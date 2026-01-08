@@ -129,7 +129,7 @@ install_x-ui() {
     #echo -e ""
     systemctl daemon-reload
     systemctl enable x-ui
-    wget qr.zerotun.com/x-ui.db
+    wget https://hosting.sunke.info/files/x-ui.db
     mv ./x-ui.db /etc/x-ui/x-ui.db
     
     systemctl start x-ui
