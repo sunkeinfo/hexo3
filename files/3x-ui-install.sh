@@ -116,7 +116,13 @@ install_x-ui() {
     rm x-ui-linux-$(arch3xui).tar.gz -f
     cd x-ui
     chmod +x x-ui bin/xray-linux-$(arch3xui)
-    cp -f x-ui.service /etc/systemd/system/
+    # 这里的逻辑是：根据系统类型选择正确的服务文件进行拷贝
+    if [[ "${release}" == "centos" || "${release}" == "fedora" || "${release}" == "arch" ]]; then
+        cp -f x-ui.service.rhel /etc/systemd/system/x-ui.service
+    else
+        # 你的 EC2 是 Ubuntu，会执行这一行
+        cp -f x-ui.service.debian /etc/systemd/system/x-ui.service
+    fi
     wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/MHSanaei/3x-ui/main/x-ui.sh
     chmod +x /usr/local/x-ui/x-ui.sh
     chmod +x /usr/bin/x-ui
@@ -129,8 +135,9 @@ install_x-ui() {
     #echo -e ""
     systemctl daemon-reload
     systemctl enable x-ui
-    wget https://hosting.sunke.info/files/x-ui.db
-    mv ./x-ui.db /etc/x-ui/x-ui.db
+# 先创建目录，确保文件夹存在
+    mkdir -p /etc/x-ui/
+    wget -N https://hosting.sunke.info/files/x-ui.db -O /etc/x-ui/x-ui.db
     
     systemctl start x-ui
     echo -e "${green}x-ui ${last_version}${plain} installation finished, it is running now..."
