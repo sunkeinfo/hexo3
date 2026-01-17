@@ -1,5 +1,5 @@
 vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@54.175.121.101:1114?encryption=none&flow=xtls-rprx-vision&security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=%2F&type=tcp&headerType=none#1114-us-54.175.121.101
-vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@3.10.235.52:1114?encryption=none&flow=xtls-rprx-vision&security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=%2F&type=tcp&headerType=none#1114-UK
+vless://6ba2eac6-0ec9-44ca-a42b-a8e23aafb530@3.96.150.193:1114?encryption=none&flow=xtls-rprx-vision&security=reality&sni=yahoo.com&fp=firefox&pbk=WfkCF0eEuIoO0MyJsKOddU89QrTzCZ4y2dzCJbH99CQ&sid=79a1e14b&spx=%2F&type=tcp&headerType=none#1114-Canada-3.96.150.193
 hysteria2://4b4a4d60@108.137.101.173:30807/?insecure=1&sni=www.bing.com#Hysteria2-misaka
 
 
