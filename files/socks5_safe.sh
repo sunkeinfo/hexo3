@@ -125,21 +125,69 @@ install_ss5() {
     
     # 创建临时目录
     TEMP_DIR=$(mktemp -d)
-    cd "$TEMP_DIR"
+    cd "$TEMP_DIR" || exit 1
     
     # 下载 ss5 源代码
     log_info "下载 ss5 源代码..."
-    wget -q https://sourceforge.net/projects/ss5/files/ss5/3.8.9-8/ss5-3.8.9-8.tar.gz
+    if ! wget -q --timeout=30 https://sourceforge.net/projects/ss5/files/ss5/3.8.9-8/ss5-3.8.9-8.tar.gz; then
+        log_error "下载 ss5 失败，尝试备用源..."
+        if ! wget -q --timeout=30 https://nchc.dl.sourceforge.net/project/ss5/ss5/3.8.9-8/ss5-3.8.9-8.tar.gz; then
+            log_error "无法从任何源下载 ss5"
+            cd /
+            rm -rf "$TEMP_DIR"
+            exit 1
+        fi
+    fi
+    
+    # 检查文件是否存在
+    if [ ! -f ss5-3.8.9-8.tar.gz ]; then
+        log_error "ss5 源代码文件不存在"
+        cd /
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
     
     # 解压
-    tar -xzf ss5-3.8.9-8.tar.gz
-    cd ss5-3.8.9-8
+    log_info "解压 ss5 源代码..."
+    if ! tar -xzf ss5-3.8.9-8.tar.gz; then
+        log_error "解压 ss5 失败"
+        cd /
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+    
+    # 检查解压后的目录
+    if [ ! -d ss5-3.8.9-8 ]; then
+        log_error "ss5 解压目录不存在"
+        cd /
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+    
+    cd ss5-3.8.9-8 || exit 1
     
     # 编译安装
     log_info "编译 ss5..."
-    ./configure --prefix=/usr/local/ss5 > /dev/null 2>&1
-    make > /dev/null 2>&1
-    make install > /dev/null 2>&1
+    if ! ./configure --prefix=/usr/local/ss5 > /dev/null 2>&1; then
+        log_error "ss5 配置失败"
+        cd /
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+    
+    if ! make > /dev/null 2>&1; then
+        log_error "ss5 编译失败"
+        cd /
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
+    
+    if ! make install > /dev/null 2>&1; then
+        log_error "ss5 安装失败"
+        cd /
+        rm -rf "$TEMP_DIR"
+        exit 1
+    fi
     
     # 创建符号链接
     ln -sf /usr/local/ss5/bin/ss5 /usr/local/bin/ss5
