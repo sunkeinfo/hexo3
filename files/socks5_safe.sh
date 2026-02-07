@@ -156,15 +156,24 @@ install_ss5() {
         exit 1
     fi
     
-    # 检查解压后的目录
-    if [ ! -d ss5-3.8.9-8 ]; then
-        log_error "ss5 解压目录不存在"
+    # 列出解压后的内容用于调试
+    log_info "解压后的目录内容："
+    ls -la "$TEMP_DIR" || true
+    
+    # 查找解压后的目录（可能有不同的名称）
+    SS5_DIR=$(ls -d ss5* 2>/dev/null | head -1)
+    
+    if [ -z "$SS5_DIR" ]; then
+        log_error "ss5 解压目录不存在，尝试使用备用方法..."
+        # 尝试直接从 tar 文件中提取
+        tar -tzf ss5-3.8.9-8.tar.gz | head -5
         cd /
         rm -rf "$TEMP_DIR"
         exit 1
     fi
     
-    cd ss5-3.8.9-8 || exit 1
+    log_info "找到 ss5 目录: $SS5_DIR"
+    cd "$SS5_DIR" || exit 1
     
     # 编译安装
     log_info "编译 ss5..."
