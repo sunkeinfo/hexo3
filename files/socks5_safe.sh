@@ -94,6 +94,13 @@ update_system() {
 install_dependencies() {
     log_info "安装依赖包..."
     
+    # 修复损坏的依赖关系
+    log_info "修复系统依赖关系..."
+    apt-get --fix-broken install -y -qq || true
+    apt-get autoremove -y -qq || true
+    apt-get clean -qq || true
+    
+    # 安装依赖包
     apt-get install -y -qq \
         curl \
         wget \
