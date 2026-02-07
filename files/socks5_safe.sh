@@ -185,6 +185,7 @@ class SOCKS5Server:
             self.server_socket.close()
     
     def handle_client(self, client_socket, client_address):
+        target_socket = None
         try:
             # 接收 SOCKS5 握手请求
             data = client_socket.recv(1024)
@@ -203,15 +204,15 @@ class SOCKS5Server:
             
             # 接收认证信息
             auth_data = client_socket.recv(1024)
-            if auth_data[0] != 1:  # 用户名/密码认证版本
+            if not auth_data or auth_data[0] != 1:  # 用户名/密码认证版本
                 client_socket.close()
                 return
             
             # 解析用户名和密码
             ulen = auth_data[1]
-            username = auth_data[2:2+ulen].decode('utf-8')
+            username = auth_data[2:2+ulen].decode('utf-8', errors='ignore')
             plen = auth_data[2+ulen]
-            password = auth_data[3+ulen:3+ulen+plen].decode('utf-8')
+            password = auth_data[3+ulen:3+ulen+plen].decode('utf-8', errors='ignore')
             
             # 验证用户名和密码
             if username == SOCKS_USER and password == SOCKS_PASS:
@@ -225,7 +226,7 @@ class SOCKS5Server:
             
             # 接收 SOCKS5 请求
             request_data = client_socket.recv(1024)
-            if not request_data:
+            if not request_data or len(request_data) < 4:
                 return
             
             # 解析请求
@@ -234,28 +235,44 @@ class SOCKS5Server:
             addr_type = request_data[3]
             
             if cmd == 1:  # CONNECT 命令
-                if addr_type == 1:  # IPv4
-                    addr = socket.inet_ntoa(request_data[4:8])
-                    port = struct.unpack('>H', request_data[8:10])[0]
-                elif addr_type == 3:  # 域名
-                    domain_len = request_data[4]
-                    addr = request_data[5:5+domain_len].decode('utf-8')
-                    port = struct.unpack('>H', request_data[5+domain_len:7+domain_len])[0]
-                else:
-                    client_socket.send(b'\x05\x08')  # 地址类型不支持
-                    client_socket.close()
-                    return
-                
-                logger.info(f"连接请求: {addr}:{port}")
-                
                 try:
+                    if addr_type == 1:  # IPv4
+                        if len(request_data) < 10:
+                            client_socket.send(b'\x05\x01')
+                            return
+                        addr = socket.inet_ntoa(request_data[4:8])
+                        port = struct.unpack('>H', request_data[8:10])[0]
+                    elif addr_type == 3:  # 域名
+                        if len(request_data) < 5:
+                            client_socket.send(b'\x05\x01')
+                            return
+                        domain_len = request_data[4]
+                        if len(request_data) < 5 + domain_len + 2:
+                            client_socket.send(b'\x05\x01')
+                            return
+                        addr = request_data[5:5+domain_len].decode('utf-8', errors='ignore')
+                        port = struct.unpack('>H', request_data[5+domain_len:7+domain_len])[0]
+                    else:
+                        client_socket.send(b'\x05\x08')  # 地址类型不支持
+                        return
+                    
+                    logger.info(f"连接请求: {addr}:{port}")
+                    
                     # 连接到目标服务器
                     target_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    target_socket.settimeout(10)
                     target_socket.connect((addr, port))
+                    target_socket.settimeout(None)
+                    
+                    # 获取本地地址用于响应
+                    local_addr = target_socket.getsockname()[0]
                     
                     # 发送成功响应
                     response = b'\x05\x00\x00\x01'
-                    response += socket.inet_aton(addr)
+                    try:
+                        response += socket.inet_aton(local_addr)
+                    except:
+                        response += socket.inet_aton('127.0.0.1')
                     response += struct.pack('>H', port)
                     client_socket.send(response)
                     
@@ -264,36 +281,61 @@ class SOCKS5Server:
                     # 转发数据
                     self.forward_data(client_socket, target_socket)
                     
+                except socket.timeout:
+                    logger.error(f"连接超时: {addr}:{port}")
+                    client_socket.send(b'\x05\x04')  # 主机不可达
+                except socket.gaierror:
+                    logger.error(f"DNS 解析失败: {addr}")
+                    client_socket.send(b'\x05\x04')  # 主机不可达
+                except ConnectionRefusedError:
+                    logger.error(f"连接被拒绝: {addr}:{port}")
+                    client_socket.send(b'\x05\x05')  # 连接被拒绝
                 except Exception as e:
                     logger.error(f"连接失败: {e}")
                     client_socket.send(b'\x05\x01')  # 一般 SOCKS 服务器故障
-                    client_socket.close()
             else:
                 client_socket.send(b'\x05\x07')  # 命令不支持
-                client_socket.close()
         
         except Exception as e:
             logger.error(f"处理客户端错误: {e}")
         finally:
-            client_socket.close()
+            try:
+                client_socket.close()
+            except:
+                pass
+            if target_socket:
+                try:
+                    target_socket.close()
+                except:
+                    pass
     
     def forward_data(self, client_socket, target_socket):
-        sockets = [client_socket, target_socket]
-        
-        while True:
-            readable, _, _ = select.select(sockets, [], [])
+        try:
+            sockets = [client_socket, target_socket]
             
-            for sock in readable:
-                if sock == client_socket:
-                    data = client_socket.recv(4096)
-                    if not data:
+            while True:
+                readable, _, _ = select.select(sockets, [], [], 30)
+                
+                if not readable:
+                    break
+                
+                for sock in readable:
+                    try:
+                        if sock == client_socket:
+                            data = client_socket.recv(4096)
+                            if not data:
+                                return
+                            target_socket.sendall(data)
+                        else:
+                            data = target_socket.recv(4096)
+                            if not data:
+                                return
+                            client_socket.sendall(data)
+                    except Exception as e:
+                        logger.error(f"数据转发错误: {e}")
                         return
-                    target_socket.send(data)
-                else:
-                    data = target_socket.recv(4096)
-                    if not data:
-                        return
-                    client_socket.send(data)
+        except Exception as e:
+            logger.error(f"转发数据异常: {e}")
 
 if __name__ == '__main__':
     server = SOCKS5Server(port=SOCKS_PORT)
