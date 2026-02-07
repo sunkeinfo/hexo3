@@ -1,10 +1,10 @@
 #!/bin/bash
 
 #====================================================
-# 简单 SOCKS5 服务器安装脚本 (ss5)
+# 简单 SOCKS5 服务器安装脚本 (Python 版本)
 # 系统要求: Ubuntu/Debian
 # 功能: 安装并配置轻量级 SOCKS5 服务
-# 安全性: 使用官方仓库、简单配置、无后门
+# 安全性: 使用 Python 实现、简单配置、无后门
 #====================================================
 
 set -e
@@ -20,6 +20,8 @@ Font="\033[0m"
 SOCKS_PORT=8888
 SOCKS_USER=8888
 SOCKS_PASS=8888
+SOCKS_DIR="/opt/socks5"
+SOCKS_SERVICE="socks5"
 
 # 日志函数
 log_info() {
@@ -102,184 +104,223 @@ install_dependencies() {
     
     # 安装依赖包
     apt-get install -y -qq \
+        python3 \
+        python3-pip \
         curl \
         wget \
         net-tools \
         lsof \
-        build-essential \
-        libpam0g-dev \
         openssl
     
     log_success "依赖包已安装"
 }
 
-# 安装 ss5
-install_ss5() {
-    log_info "安装 ss5 SOCKS5 服务器..."
+# 创建 SOCKS5 服务目录
+create_socks_dir() {
+    log_info "创建 SOCKS5 服务目录..."
     
-    # 检查是否已安装
-    if command -v ss5 &> /dev/null; then
-        log_warn "ss5 已安装，跳过安装步骤"
-        return
-    fi
+    mkdir -p "$SOCKS_DIR"
+    mkdir -p /var/log/socks5
     
-    # 创建临时目录
-    TEMP_DIR=$(mktemp -d)
-    cd "$TEMP_DIR" || exit 1
-    
-    # 下载 ss5 源代码
-    log_info "下载 ss5 源代码..."
-    if ! wget -q --timeout=30 https://sourceforge.net/projects/ss5/files/ss5/3.8.9-8/ss5-3.8.9-8.tar.gz; then
-        log_error "下载 ss5 失败，尝试备用源..."
-        if ! wget -q --timeout=30 https://nchc.dl.sourceforge.net/project/ss5/ss5/3.8.9-8/ss5-3.8.9-8.tar.gz; then
-            log_error "无法从任何源下载 ss5"
-            cd /
-            rm -rf "$TEMP_DIR"
-            exit 1
-        fi
-    fi
-    
-    # 检查文件是否存在
-    if [ ! -f ss5-3.8.9-8.tar.gz ]; then
-        log_error "ss5 源代码文件不存在"
-        cd /
-        rm -rf "$TEMP_DIR"
-        exit 1
-    fi
-    
-    # 解压
-    log_info "解压 ss5 源代码..."
-    if ! tar -xzf ss5-3.8.9-8.tar.gz; then
-        log_error "解压 ss5 失败"
-        cd /
-        rm -rf "$TEMP_DIR"
-        exit 1
-    fi
-    
-    # 列出解压后的内容用于调试
-    log_info "解压后的目录内容："
-    ls -la "$TEMP_DIR" || true
-    
-    # 查找解压后的目录（可能有不同的名称）
-    SS5_DIR=$(ls -d ss5* 2>/dev/null | head -1)
-    
-    if [ -z "$SS5_DIR" ]; then
-        log_error "ss5 解压目录不存在，尝试使用备用方法..."
-        # 尝试直接从 tar 文件中提取
-        tar -tzf ss5-3.8.9-8.tar.gz | head -5
-        cd /
-        rm -rf "$TEMP_DIR"
-        exit 1
-    fi
-    
-    log_info "找到 ss5 目录: $SS5_DIR"
-    cd "$SS5_DIR" || exit 1
-    
-    # 编译安装
-    log_info "编译 ss5..."
-    if ! ./configure --prefix=/usr/local/ss5 > /dev/null 2>&1; then
-        log_error "ss5 配置失败"
-        cd /
-        rm -rf "$TEMP_DIR"
-        exit 1
-    fi
-    
-    if ! make > /dev/null 2>&1; then
-        log_error "ss5 编译失败"
-        cd /
-        rm -rf "$TEMP_DIR"
-        exit 1
-    fi
-    
-    if ! make install > /dev/null 2>&1; then
-        log_error "ss5 安装失败"
-        cd /
-        rm -rf "$TEMP_DIR"
-        exit 1
-    fi
-    
-    # 创建符号链接
-    ln -sf /usr/local/ss5/bin/ss5 /usr/local/bin/ss5
-    ln -sf /usr/local/ss5/bin/ss5 /usr/sbin/ss5
-    
-    # 清理临时文件
-    cd /
-    rm -rf "$TEMP_DIR"
-    
-    log_success "ss5 已安装"
+    log_success "目录已创建"
 }
 
-# 配置 ss5
-configure_ss5() {
-    log_info "配置 ss5..."
+# 创建 Python SOCKS5 服务器脚本
+create_socks5_server() {
+    log_info "创建 SOCKS5 服务器脚本..."
     
-    # 创建配置目录
-    mkdir -p /etc/ss5
-    
-    # 创建配置文件
-    cat > /etc/ss5/ss5.conf << 'EOF'
-# SS5 配置文件
-# 监听地址和端口
-listen 0.0.0.0 8888
+    cat > "$SOCKS_DIR/socks5_server.py" << 'PYTHON_EOF'
+#!/usr/bin/env python3
+import socket
+import struct
+import select
+import sys
+import logging
+import os
+from threading import Thread
 
-# 认证方式: u 表示用户名/密码认证
-auth 0.0.0.0/0 - u
+# 配置日志
+log_file = '/var/log/socks5/socks5.log'
+os.makedirs(os.path.dirname(log_file), exist_ok=True)
 
-# 日志配置
-logoutput /var/log/ss5/ss5.log
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file),
+        logging.StreamHandler()
+    ]
+)
 
-# 允许所有连接
-permit u 0.0.0.0/0 - 0.0.0.0/0 - - - - -
-EOF
-    
-    chmod 644 /etc/ss5/ss5.conf
-    
-    log_success "ss5 配置已完成"
-}
+logger = logging.getLogger(__name__)
 
-# 创建用户账户
-create_user() {
-    log_info "创建 SOCKS5 用户账户..."
-    
-    # 创建密码文件
-    mkdir -p /etc/ss5
-    
-    # 清空旧的密码文件
-    > /etc/ss5/ss5.passwd
-    
-    # 添加用户（格式: username:password）
-    echo "$SOCKS_USER:$SOCKS_PASS" >> /etc/ss5/ss5.passwd
-    
-    # 设置权限
-    chmod 600 /etc/ss5/ss5.passwd
-    chown root:root /etc/ss5/ss5.passwd
-    
-    log_success "用户 $SOCKS_USER 已创建"
-}
+# 从环境变量读取配置
+SOCKS_PORT = int(os.environ.get('SOCKS_PORT', 8888))
+SOCKS_USER = os.environ.get('SOCKS_USER', '8888')
+SOCKS_PASS = os.environ.get('SOCKS_PASS', '8888')
 
-# 创建日志目录
-create_log_dir() {
-    log_info "创建日志目录..."
+class SOCKS5Server:
+    def __init__(self, host='0.0.0.0', port=SOCKS_PORT):
+        self.host = host
+        self.port = port
+        self.server_socket = None
+        
+    def start(self):
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.bind((self.host, self.port))
+        self.server_socket.listen(100)
+        logger.info(f"SOCKS5 服务器启动在 {self.host}:{self.port}")
+        
+        try:
+            while True:
+                client_socket, client_address = self.server_socket.accept()
+                logger.info(f"新连接来自 {client_address}")
+                client_thread = Thread(target=self.handle_client, args=(client_socket, client_address))
+                client_thread.daemon = True
+                client_thread.start()
+        except KeyboardInterrupt:
+            logger.info("服务器关闭")
+        finally:
+            self.server_socket.close()
     
-    mkdir -p /var/log/ss5
-    chmod 755 /var/log/ss5
+    def handle_client(self, client_socket, client_address):
+        try:
+            # 接收 SOCKS5 握手请求
+            data = client_socket.recv(1024)
+            if not data:
+                return
+            
+            # 解析 SOCKS5 握手
+            version = data[0]
+            if version != 5:
+                logger.warning(f"不支持的 SOCKS 版本: {version}")
+                client_socket.close()
+                return
+            
+            # 发送认证方法选择响应
+            client_socket.send(b'\x05\x02')  # 使用用户名/密码认证
+            
+            # 接收认证信息
+            auth_data = client_socket.recv(1024)
+            if auth_data[0] != 1:  # 用户名/密码认证版本
+                client_socket.close()
+                return
+            
+            # 解析用户名和密码
+            ulen = auth_data[1]
+            username = auth_data[2:2+ulen].decode('utf-8')
+            plen = auth_data[2+ulen]
+            password = auth_data[3+ulen:3+ulen+plen].decode('utf-8')
+            
+            # 验证用户名和密码
+            if username == SOCKS_USER and password == SOCKS_PASS:
+                client_socket.send(b'\x01\x00')  # 认证成功
+                logger.info(f"用户 {username} 认证成功")
+            else:
+                client_socket.send(b'\x01\x01')  # 认证失败
+                logger.warning(f"用户 {username} 认证失败")
+                client_socket.close()
+                return
+            
+            # 接收 SOCKS5 请求
+            request_data = client_socket.recv(1024)
+            if not request_data:
+                return
+            
+            # 解析请求
+            version = request_data[0]
+            cmd = request_data[1]
+            addr_type = request_data[3]
+            
+            if cmd == 1:  # CONNECT 命令
+                if addr_type == 1:  # IPv4
+                    addr = socket.inet_ntoa(request_data[4:8])
+                    port = struct.unpack('>H', request_data[8:10])[0]
+                elif addr_type == 3:  # 域名
+                    domain_len = request_data[4]
+                    addr = request_data[5:5+domain_len].decode('utf-8')
+                    port = struct.unpack('>H', request_data[5+domain_len:7+domain_len])[0]
+                else:
+                    client_socket.send(b'\x05\x08')  # 地址类型不支持
+                    client_socket.close()
+                    return
+                
+                logger.info(f"连接请求: {addr}:{port}")
+                
+                try:
+                    # 连接到目标服务器
+                    target_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    target_socket.connect((addr, port))
+                    
+                    # 发送成功响应
+                    response = b'\x05\x00\x00\x01'
+                    response += socket.inet_aton(addr)
+                    response += struct.pack('>H', port)
+                    client_socket.send(response)
+                    
+                    logger.info(f"连接成功: {addr}:{port}")
+                    
+                    # 转发数据
+                    self.forward_data(client_socket, target_socket)
+                    
+                except Exception as e:
+                    logger.error(f"连接失败: {e}")
+                    client_socket.send(b'\x05\x01')  # 一般 SOCKS 服务器故障
+                    client_socket.close()
+            else:
+                client_socket.send(b'\x05\x07')  # 命令不支持
+                client_socket.close()
+        
+        except Exception as e:
+            logger.error(f"处理客户端错误: {e}")
+        finally:
+            client_socket.close()
     
-    log_success "日志目录已创建"
+    def forward_data(self, client_socket, target_socket):
+        sockets = [client_socket, target_socket]
+        
+        while True:
+            readable, _, _ = select.select(sockets, [], [])
+            
+            for sock in readable:
+                if sock == client_socket:
+                    data = client_socket.recv(4096)
+                    if not data:
+                        return
+                    target_socket.send(data)
+                else:
+                    data = target_socket.recv(4096)
+                    if not data:
+                        return
+                    client_socket.send(data)
+
+if __name__ == '__main__':
+    server = SOCKS5Server(port=SOCKS_PORT)
+    server.start()
+PYTHON_EOF
+    
+    chmod +x "$SOCKS_DIR/socks5_server.py"
+    log_success "SOCKS5 服务器脚本已创建"
 }
 
 # 创建 systemd 服务文件
 create_systemd_service() {
     log_info "创建 systemd 服务..."
     
-    cat > /etc/systemd/system/ss5.service << 'EOF'
+    cat > /etc/systemd/system/socks5.service << EOF
 [Unit]
-Description=SS5 SOCKS5 Server
+Description=SOCKS5 Server
 After=network.target
 
 [Service]
 Type=simple
 User=root
-ExecStart=/usr/sbin/ss5 -t -f /etc/ss5/ss5.conf
+WorkingDirectory=$SOCKS_DIR
+Environment="SOCKS_PORT=$SOCKS_PORT"
+Environment="SOCKS_USER=$SOCKS_USER"
+Environment="SOCKS_PASS=$SOCKS_PASS"
+ExecStart=/usr/bin/python3 $SOCKS_DIR/socks5_server.py
 Restart=on-failure
 RestartSec=5
 
@@ -287,31 +328,30 @@ RestartSec=5
 WantedBy=multi-user.target
 EOF
     
-    chmod 644 /etc/systemd/system/ss5.service
-    
+    chmod 644 /etc/systemd/system/socks5.service
     log_success "systemd 服务已创建"
 }
 
 # 启动服务
 start_service() {
-    log_info "启动 ss5 服务..."
+    log_info "启动 SOCKS5 服务..."
     
     # 重新加载 systemd
     systemctl daemon-reload
     
     # 启用服务开机自启
-    systemctl enable ss5
+    systemctl enable socks5
     
     # 启动服务
-    systemctl start ss5
+    systemctl start socks5
     
     # 检查服务状态
     sleep 2
-    if systemctl is-active --quiet ss5; then
-        log_success "ss5 服务已启动"
+    if systemctl is-active --quiet socks5; then
+        log_success "SOCKS5 服务已启动"
     else
-        log_error "ss5 服务启动失败"
-        systemctl status ss5
+        log_error "SOCKS5 服务启动失败"
+        systemctl status socks5
         exit 1
     fi
 }
@@ -331,19 +371,11 @@ verify_installation() {
         exit 1
     fi
     
-    # 检查配置文件
-    if [ -f /etc/ss5/ss5.conf ]; then
-        log_success "配置文件存在"
+    # 检查服务文件
+    if [ -f "$SOCKS_DIR/socks5_server.py" ]; then
+        log_success "服务器脚本存在"
     else
-        log_error "配置文件不存在"
-        exit 1
-    fi
-    
-    # 检查密码文件
-    if [ -f /etc/ss5/ss5.passwd ]; then
-        log_success "密码文件存在"
-    else
-        log_error "密码文件不存在"
+        log_error "服务器脚本不存在"
         exit 1
     fi
 }
@@ -366,9 +398,8 @@ show_connection_info() {
     echo "测试连接命令:"
     echo "curl -x socks5://$SOCKS_USER:$SOCKS_PASS@127.0.0.1:$SOCKS_PORT http://ipinfo.io"
     echo ""
-    echo "日志位置: /var/log/ss5/ss5.log"
-    echo "配置文件: /etc/ss5/ss5.conf"
-    echo "密码文件: /etc/ss5/ss5.passwd"
+    echo "日志位置: /var/log/socks5/socks5.log"
+    echo "服务器脚本: $SOCKS_DIR/socks5_server.py"
     echo "=========================================="
 }
 
@@ -378,12 +409,12 @@ show_security_tips() {
     echo "=========================================="
     echo "安全建议"
     echo "=========================================="
-    echo "1. 定期检查日志: tail -f /var/log/ss5/ss5.log"
+    echo "1. 定期检查日志: tail -f /var/log/socks5/socks5.log"
     echo "2. 定期更新系统: apt-get update && apt-get upgrade"
     echo "3. 配置防火墙规则限制访问"
-    echo "4. 定期更改密码: 编辑 /etc/ss5/ss5.passwd"
+    echo "4. 定期更改密码: 编辑 /etc/systemd/system/socks5.service"
     echo "5. 监控端口连接: netstat -tulpn | grep 8888"
-    echo "6. 检查服务状态: systemctl status ss5"
+    echo "6. 检查服务状态: systemctl status socks5"
     echo "=========================================="
 }
 
@@ -391,7 +422,7 @@ show_security_tips() {
 main() {
     echo ""
     echo "=========================================="
-    echo "简单 SOCKS5 服务器安装脚本 (ss5)"
+    echo "简单 SOCKS5 服务器安装脚本 (Python 版本)"
     echo "=========================================="
     echo ""
     
@@ -400,10 +431,8 @@ main() {
     check_port
     update_system
     install_dependencies
-    install_ss5
-    create_log_dir
-    configure_ss5
-    create_user
+    create_socks_dir
+    create_socks5_server
     create_systemd_service
     start_service
     verify_installation
