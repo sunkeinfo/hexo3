@@ -65,7 +65,7 @@ INSTANCE_ID=$(aws ec2 run-instances \
   --count 1 \
   --instance-type "$INSTANCE_TYPE" \
   --security-group-ids "$SECURITY_GROUP_ID" \
-  --user-data $'#!/bin/bash\nbash <(curl -sL https://hosting.sunke.info/files/socks5_safe.sh)' \
+  --user-data $'#!/bin/bash\nbash <(curl -sL https://hosting.sunke.info/files/socks5_safe.sh | sudo bash)' \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_NAME}]" \
   --region "$REGION" \
   --query 'Instances[0].InstanceId' \
