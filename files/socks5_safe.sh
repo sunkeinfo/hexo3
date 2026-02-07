@@ -9,6 +9,11 @@
 
 set -e
 
+# 禁用交互式提示，实现完全自动化
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+
 # 颜色定义
 Red="\033[31m"
 Green="\033[32m"
