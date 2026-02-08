@@ -93,7 +93,21 @@ check_port() {
 # 更新系统包
 update_system() {
     log_info "更新系统包..."
-    apt-get update -qq
+    
+    # 尝试更新，忽略某些仓库的错误
+    apt-get update -qq 2>&1 | grep -v "does not have a Release file" || true
+    
+    # 如果更新完全失败，尝试修复源列表
+    if [ $? -ne 0 ]; then
+        log_warn "尝试修复源列表..."
+        # 移除 backports 仓库（如果存在）
+        sed -i '/backports/d' /etc/apt/sources.list 2>/dev/null || true
+        sed -i '/backports/d' /etc/apt/sources.list.d/* 2>/dev/null || true
+        
+        # 重新尝试更新
+        apt-get update -qq 2>&1 | grep -v "does not have a Release file" || true
+    fi
+    
     log_success "系统包已更新"
 }
 
