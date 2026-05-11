@@ -43,19 +43,16 @@ elif [[ "${release}" == "ubuntu" ]]; then
     if [[ ${os_version} -lt 20 ]]; then
         echo -e "${red}please use Ubuntu 20 or higher version!${plain}\n" && exit 1
     fi
-
 elif [[ "${release}" == "fedora" ]]; then
     if [[ ${os_version} -lt 36 ]]; then
         echo -e "${red}please use Fedora 36 or higher version!${plain}\n" && exit 1
     fi
-
 elif [[ "${release}" == "debian" ]]; then
     if [[ ${os_version} -lt 10 ]]; then
         echo -e "${red} Please use Debian 10 or higher ${plain}\n" && exit 1
     fi
 elif [[ "${release}" == "arch" ]]; then
     echo "OS is ArchLinux"
-
 else
     echo -e "${red}Failed to check the OS version, please contact the author!${plain}" && exit 1
 fi
@@ -74,7 +71,6 @@ install_base() {
     esac
 }
 
-# This function will be called when user installed x-ui out of sercurity
 config_after_install() {
     /usr/local/x-ui/x-ui setting -username admin -password admin123
     /usr/local/x-ui/x-ui setting -port 65432
@@ -84,28 +80,20 @@ config_after_install() {
 install_x-ui() {
     cd /usr/local/
 
-    if [ $# == 0 ]; then
-        last_version=$(curl -Ls "https://api.github.com/repos/MHSanaei/3x-ui/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-        if [[ ! -n "$last_version" ]]; then
-            echo -e "${red}Failed to fetch x-ui version, it maybe due to Github API restrictions, please try it later${plain}"
-            exit 1
-        fi
-        echo -e "Got x-ui latest version: ${last_version}, beginning the installation..."
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch3xui).tar.gz https://github.com/MHSanaei/3x-ui/releases/download/${last_version}/x-ui-linux-$(arch3xui).tar.gz
-        if [[ $? -ne 0 ]]; then
-            echo -e "${red}Downloading x-ui failed, please be sure that your server can access Github ${plain}"
-            exit 1
-        fi
-    else
-        last_version=$1
-        url="https://github.com/MHSanaei/3x-ui/releases/download/${last_version}/x-ui-linux-$(arch3xui).tar.gz"
-        echo -e "Begining to install x-ui $1"
-        wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch3xui).tar.gz ${url}
-        if [[ $? -ne 0 ]]; then
-            echo -e "${red}Download x-ui $1 failed,please check the version exists ${plain}"
-            exit 1
-        fi
+    # ------------------ 修改部分：锁定版本为 v2.8.11 ------------------
+    last_version="v2.8.11"
+    echo -e "准备安装指定版本: ${green}${last_version}${plain}"
+    
+    url="https://github.com/MHSanaei/3x-ui/releases/download/${last_version}/x-ui-linux-$(arch3xui).tar.gz"
+    
+    echo -e "正在从 GitHub 下载 x-ui ${last_version}..."
+    wget -N --no-check-certificate -O /usr/local/x-ui-linux-$(arch3xui).tar.gz ${url}
+    
+    if [[ $? -ne 0 ]]; then
+        echo -e "${red}下载 x-ui ${last_version} 失败，请检查网络或确认该版本是否存在于仓库中。${plain}"
+        exit 1
     fi
+    # ----------------------------------------------------------------
 
     if [[ -e /usr/local/x-ui/ ]]; then
         systemctl stop x-ui
@@ -116,26 +104,23 @@ install_x-ui() {
     rm x-ui-linux-$(arch3xui).tar.gz -f
     cd x-ui
     chmod +x x-ui bin/xray-linux-$(arch3xui)
-    # 这里的逻辑是：根据系统类型选择正确的服务文件进行拷贝
+    
     if [[ "${release}" == "centos" || "${release}" == "fedora" || "${release}" == "arch" ]]; then
         cp -f x-ui.service.rhel /etc/systemd/system/x-ui.service
     else
-        # 你的 EC2 是 Ubuntu，会执行这一行
         cp -f x-ui.service.debian /etc/systemd/system/x-ui.service
     fi
+
     wget --no-check-certificate -O /usr/bin/x-ui https://raw.githubusercontent.com/MHSanaei/3x-ui/main/x-ui.sh
     chmod +x /usr/local/x-ui/x-ui.sh
     chmod +x /usr/bin/x-ui
+    
     config_after_install
-    #echo -e "If it is a new installation, the default web port is ${green}2053${plain}, The username and password are ${green}admin${plain} by default"
-    #echo -e "Please make sure that this port is not occupied by other procedures,${yellow} And make sure that port 2053 has been released${plain}"
-    #    echo -e "If you want to modify the 2053 to other ports and enter the x-ui command to modify it, you must also ensure that the port you modify is also released"
-    #echo -e ""
-    #echo -e "If it is updated panel, access the panel in your previous way"
-    #echo -e ""
+    
     systemctl daemon-reload
     systemctl enable x-ui
-# 先创建目录，确保文件夹存在
+    
+    # 自动恢复预设数据库
     mkdir -p /etc/x-ui/
     wget -N https://hosting.sunke.info/files/x-ui.db -O /etc/x-ui/x-ui.db
     
@@ -152,7 +137,6 @@ install_x-ui() {
     echo -e "x-ui enable       - Enable    x-ui on system startup"
     echo -e "x-ui disable      - Disable   x-ui on system startup"
     echo -e "x-ui log          - Check     x-ui logs"
-    echo -e "x-ui banlog       - Check Fail2ban ban logs"
     echo -e "x-ui update       - Update    x-ui"
     echo -e "x-ui install      - Install   x-ui"
     echo -e "x-ui uninstall    - Uninstall x-ui"
@@ -161,4 +145,4 @@ install_x-ui() {
 
 echo -e "${green}Running...${plain}"
 install_base
-install_x-ui $1
+install_x-ui
