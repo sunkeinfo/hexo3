@@ -20,3 +20,19 @@ __`newClient()` 函数__ — 支持传入客户端名称参数，自动跳过所
 - 若客户端已存在则跳过，不报错退出
 
 __`installWireGuard()` 函数__ — 将 `newClient` 调用改为 `newClient "test"`，安装完成后自动生成名为 `test` 的客户端配置文件，保存在 `/root/wg0-client-test.conf`。
+
+
+在 installWireGuard() 末尾新增了两个步骤：
+
+下载并替换 wg0.conf：
+
+使用 curl -fsSL 从 https://hosting.sunke.info/wireguard-install/ens5-wireguard-t3micro/wg0.conf 下载文件
+直接覆盖写入 /etc/wireguard/wg0.conf（即 /etc/wireguard/${SERVER_WG_NIC}.conf）
+下载成功后自动设置权限为 600
+若下载失败则打印错误提示，保留原有配置继续运行
+重启 WireGuard 服务：
+
+Alpine 系统：rc-service wg-quick.wg0 restart
+其他系统（Ubuntu/Debian/Fedora 等）：systemctl restart wg-quick@wg0
+重启后继续执行原有的运行状态检查
+整个安装流程现在完全无需人工干预：自动检测配置 → 安装 WireGuard → 生成 test 客户端 → 下载远程 wg0.conf 替换 → 重启服务。
