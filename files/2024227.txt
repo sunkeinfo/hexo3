@@ -1,3 +1,3 @@
 hysteria2://4b3f984f@44.198.180.112:42134/?insecure=1&sni=www.bing.com#Hysteria2-misaka
 hysteria2://19cf3834@3.71.179.152:37979/?insecure=1&sni=www.bing.com#Hysteria2-misaka
-vmess://2a557a11-1742-47dc-86de-c47217bff139@h.omeis.th.ereal.cheapec2.com:8080?encryption=auto&security=none&fp=&type=ws&path=/881726ddsws&host=h.omeis.th.ereal.cheapec2.com#h.omeis.th.ereal.cheapec2.com
+hysteria2://168c0d43@3.97.86.117:40278/?insecure=1&sni=www.bing.com#Hysteria2-canada-workspace
