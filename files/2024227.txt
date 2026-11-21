@@ -1,4 +1,4 @@
 hysteria2://168c0d43@3.97.86.117:40278/?insecure=1&sni=www.bing.com#Hysteria2-canada-workspace
 hysteria2://168c0d43@13.213.19.206:40278/?insecure=1&sni=www.bing.com#singapore-forwardto-Hysteria2-canada-workspace
 hysteria2://332e42cb@18.139.151.254:61740/?insecure=1&sni=www.bing.com#singapore-Hysteria2-misaka
-hy2://YourStrongPasswordHere123!@100.62.81.246:443?insecure=1&sni=www.bing.com#Windows-Hy2
+hy2://YourStrongPasswordHere123!@100.62.81.246:443?insecure=1&sni=www.bing.com#USA-Windows-Hy2
