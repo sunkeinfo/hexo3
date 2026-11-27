@@ -304,7 +304,7 @@
     <header>
         <div>
             <h1>AWS WorkSpaces 显卡实例配置与定价对比</h1>
-            <p>涵盖 G6 / Gr6 / G6f / Gr6f / G4dn 全系列 | 包含硬件规格、CPU/GPU 型号及 AlwaysOn / AutoStop 成本测算</p>
+            <p>涵盖 G6 / Gr6 / G6f / Gr6f / G4dn 全系列 (共14款) | 包含硬件规格、CPU/GPU 型号及 AlwaysOn / AutoStop 成本测算</p>
         </div>
         <div class="badges">
             <span class="badge">区域: US East (N. Virginia / us-east-1)</span>
@@ -328,9 +328,9 @@
             <p><strong>适用场景:</strong> 大型工业CAD装配、CAE仿真、地质建模、大数据集可视化</p>
         </div>
         <div class="arch-card g4dn">
-            <h3>GraphicsPro.g4dn (上一代旗舰型)</h3>
+            <h3>Graphics.g4dn & GraphicsPro.g4dn (上一代)</h3>
             <p><strong>CPU 型号:</strong> Intel Xeon Platinum 8259CL (Cascade Lake, 2.5 GHz)</p>
-            <p><strong>GPU 型号:</strong> NVIDIA T4 Tensor Core (16GB 显存) + 225GB 本地NVMe缓存</p>
+            <p><strong>GPU 型号:</strong> NVIDIA T4 Tensor Core (16GB 显存) + 本地NVMe缓存</p>
             <p><strong>适用场景:</strong> 依赖旧版CUDA/T4驱动兼容性的传统工作流</p>
         </div>
     </div>
@@ -347,7 +347,7 @@
         <div class="control-group">
             <label>按实例系列筛选:</label>
             <div class="filter-buttons" id="filterGroup">
-                <button class="filter-btn active" data-filter="all">全部 (12款)</button>
+                <button class="filter-btn active" data-filter="all">全部 (14款)</button>
                 <button class="filter-btn" data-filter="g6f">G6f / Gr6f (切分GPU)</button>
                 <button class="filter-btn" data-filter="g6">G6 (整卡GPU)</button>
                 <button class="filter-btn" data-filter="gr6">Gr6 (大内存1:8)</button>
@@ -383,7 +383,7 @@
         <ul>
             <li><strong>存储包含说明</strong>：上述 AlwaysOn 与 AutoStop 的月基础费均已包含表格中列出的默认 Root Volume 和 User Volume 存储费用，Ubuntu 系统无需额外支付 OS 许可证费用。</li>
             <li><strong>盈亏平衡点</strong>：指每月使用多少小时后，<code>AutoStop</code> 总费用会超过 <code>AlwaysOn</code> 包月费用。一般而言，每周工作 5 天、每天使用超过 12 小时（约 265~285 小时/月）建议选 AlwaysOn；常规 8 小时工作制（约 160~176 小时/月）选择 AutoStop 可节省约 30%~40% 成本。</li>
-            <li><strong>特别提示 (GraphicsPro.g4dn)</strong>：AWS 在推出 G6 系列后，<code>GraphicsPro.g4dn</code> 在部分区域和 Core 计费表中的按需小时费率较高（$8.88/hr），同等预算下强烈建议优先选择性能翻倍且显存更大（24GB vs 16GB）的 <code>Graphics.g6.4xlarge</code>。</li>
+            <li><strong>G4dn 两款对比提示</strong>：<code>Graphics.g4dn</code>（8 vCPU / 32GB / 16GB T4，$473/月）与 <code>Graphics.g6.2xlarge</code>（8 vCPU / 32GB / 24GB L4，$571/月）定位接近，后者显卡代际与显存全面领先；而 <code>GraphicsPro.g4dn</code>（16 vCPU / 64GB，$764/月）与 <code>Graphics.g6.4xlarge</code>（$773/月）价格几乎一致，新购建议优先选 G6 系列。</li>
         </ul>
     </div>
 </div>
@@ -547,9 +547,22 @@
             autoStopHourly: 4.90
         },
         {
+            name: "Graphics.g4dn",
+            series: "g4dn",
+            seriesLabel: "G4dn 上一代标准型",
+            vcpu: 8,
+            ram: 32,
+            cpuModel: "Intel Xeon P-8259CL (2.5 GHz)",
+            gpuModel: "1 × NVIDIA T4 (16 GiB VRAM) + 125GB NVMe",
+            storage: "100 GB / 100 GB",
+            alwaysOn: 473.00,
+            autoStopBase: 24.00,
+            autoStopHourly: 1.60
+        },
+        {
             name: "GraphicsPro.g4dn",
             series: "g4dn",
-            seriesLabel: "G4dn 上一代旗舰",
+            seriesLabel: "G4dn 上一代专业型",
             vcpu: 16,
             ram: 64,
             cpuModel: "Intel Xeon P-8259CL (2.5 GHz)",
