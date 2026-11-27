@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS WorkSpaces GPU 实例配置与定价对比 (US East - Ubuntu)</title>
+    <style>
+        :root {
+            --bg-color: #f4f6f9;
+            --card-bg: #ffffff;
+            --primary: #232f3e;
+            --accent: #ff9900;
+            --accent-hover: #e68a00;
+            --text-main: #16191f;
+            --text-muted: #545b64;
+            --border: #d5dbdb;
+            --success: #1d8102;
+            --info-bg: #f1faff;
+            --info-border: #0073bb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 24px;
+        }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+        }
+
+        header {
+            background-color: var(--primary);
+            color: #ffffff;
+            padding: 24px 32px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        header h1 {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        header p {
+            font-size: 13px;
+            color: #d5dbdb;
+        }
+
+        .badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge.ubuntu {
+            border-color: #e95420;
+            background: rgba(233, 84, 32, 0.2);
+            color: #ffbfa8;
+        }
+
+        .controls-panel {
+            background: var(--card-bg);
+            padding: 20px 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            align-items: center;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            accent-color: var(--accent);
+            cursor: pointer;
+        }
+
+        .hours-display {
+            background: var(--primary);
+            color: #fff;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 14px;
+            min-width: 85px;
+            text-align: center;
+        }
+
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 7px 14px;
+            border: 1px solid var(--border);
+            background: #fff;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .filter-btn:hover {
+            background: #f2f3f3;
+        }
+
+        .filter-btn.active {
+            background: var(--primary);
+            color: #fff;
+            border-color: var(--primary);
+        }
+
+        .arch-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .arch-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent);
+            border-radius: 6px;
+            padding: 16px 20px;
+        }
+
+        .arch-card.g4dn {
+            border-left-color: #687078;
+        }
+
+        .arch-card h3 {
+            font-size: 15px;
+            margin-bottom: 6px;
+            color: var(--primary);
+        }
+
+        .arch-card p {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .table-wrapper {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow-x: auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 13px;
+        }
+
+        th {
+            background-color: #fafafa;
+            color: var(--text-main);
+            font-weight: 600;
+            padding: 14px 16px;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            background-color: #f0f2f2;
+        }
+
+        td {
+            padding: 14px 16px;
+            border-bottom: 1px solid #eaeded;
+            vertical-align: middle;
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .bundle-name {
+            font-weight: 700;
+            color: #0073bb;
+            font-size: 13.5px;
+            display: block;
+        }
+
+        .series-tag {
+            display: inline-block;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .tag-g6f { background: #e6f4ea; color: #137333; }
+        .tag-g6 { background: #e8f0fe; color: #1967d2; }
+        .tag-gr6 { background: #fef7e0; color: #b06000; }
+        .tag-g4dn { background: #f1f3f4; color: #5f6368; }
+
+        .price-main {
+            font-weight: 700;
+            font-size: 14px;
+            color: var(--text-main);
+        }
+
+        .price-sub {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            display: block;
+        }
+
+        .winner-badge {
+            display: inline-block;
+            background-color: #e6f4ea;
+            color: var(--success);
+            border: 1px solid #b7e1cd;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-top: 4px;
+        }
+
+        .cpu-spec {
+            font-size: 12.5px;
+            font-weight: 500;
+        }
+
+        .gpu-spec {
+            font-size: 12.5px;
+        }
+
+        .notes {
+            margin-top: 20px;
+            background: var(--info-bg);
+            border: 1px solid var(--info-border);
+            border-radius: 6px;
+            padding: 16px 20px;
+            font-size: 12.5px;
+            color: #16191f;
+        }
+
+        .notes ul {
+            margin-left: 20px;
+            margin-top: 6px;
+        }
+
+        .notes li {
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div>
+            <h1>AWS WorkSpaces 显卡实例配置与定价对比</h1>
+            <p>涵盖 G6 / Gr6 / G6f / Gr6f / G4dn 全系列 | 包含硬件规格、CPU/GPU 型号及 AlwaysOn / AutoStop 成本测算</p>
+        </div>
+        <div class="badges">
+            <span class="badge">区域: US East (N. Virginia / us-east-1)</span>
+            <span class="badge ubuntu">OS: Ubuntu Linux (含授权)</span>
+            <span class="badge">币种: USD ($)</span>
+        </div>
+    </header>
+
+    <!-- 硬件架构速览 -->
+    <div class="arch-cards">
+        <div class="arch-card">
+            <h3>G6 / G6f 系列 (最新代均衡型 & 切分型)</h3>
+            <p><strong>CPU 型号:</strong> AMD EPYC 7R13 (第3代, 2.6 GHz)</p>
+            <p><strong>GPU 型号:</strong> NVIDIA L4 Tensor Core (G6为整卡24GB; G6f为1/8~1/2切分卡)</p>
+            <p><strong>适用场景:</strong> 3D渲染、视频剪辑、AI推理、轻中度CAD (G6f性价比极高)</p>
+        </div>
+        <div class="arch-card">
+            <h3>Gr6 / Gr6f 系列 (最新代大内存型)</h3>
+            <p><strong>CPU 型号:</strong> AMD EPYC 7R13 (第3代, 2.6 GHz)</p>
+            <p><strong>GPU 型号:</strong> NVIDIA L4 Tensor Core (1:8 超高 CPU:内存配比)</p>
+            <p><strong>适用场景:</strong> 大型工业CAD装配、CAE仿真、地质建模、大数据集可视化</p>
+        </div>
+        <div class="arch-card g4dn">
+            <h3>GraphicsPro.g4dn (上一代旗舰型)</h3>
+            <p><strong>CPU 型号:</strong> Intel Xeon Platinum 8259CL (Cascade Lake, 2.5 GHz)</p>
+            <p><strong>GPU 型号:</strong> NVIDIA T4 Tensor Core (16GB 显存) + 225GB 本地NVMe缓存</p>
+            <p><strong>适用场景:</strong> 依赖旧版CUDA/T4驱动兼容性的传统工作流</p>
+        </div>
+    </div>
+
+    <!-- 交互控制面板 -->
+    <div class="controls-panel">
+        <div class="control-group">
+            <label for="hoursSlider">模拟每月使用时长 (用于动态计算 AutoStop 总费用):</label>
+            <div class="slider-container">
+                <input type="range" id="hoursSlider" min="10" max="400" step="10" value="160">
+                <span class="hours-display" id="hoursValue">160 小时/月</span>
+            </div>
+        </div>
+        <div class="control-group">
+            <label>按实例系列筛选:</label>
+            <div class="filter-buttons" id="filterGroup">
+                <button class="filter-btn active" data-filter="all">全部 (12款)</button>
+                <button class="filter-btn" data-filter="g6f">G6f / Gr6f (切分GPU)</button>
+                <button class="filter-btn" data-filter="g6">G6 (整卡GPU)</button>
+                <button class="filter-btn" data-filter="gr6">Gr6 (大内存1:8)</button>
+                <button class="filter-btn" data-filter="g4dn">G4dn (上一代)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据表格 -->
+    <div class="table-wrapper">
+        <table id="workspaceTable">
+            <thead>
+                <tr>
+                    <th onclick="sortTable(0)">WorkSpaces 套餐名称 ↕</th>
+                    <th onclick="sortTable(1)">vCPU / 内存 ↕</th>
+                    <th>物理 CPU 型号</th>
+                    <th>GPU 型号与显存</th>
+                    <th>默认存储 (Root / User)</th>
+                    <th onclick="sortTable(5)">AlwaysOn (包月固定价) ↕</th>
+                    <th onclick="sortTable(6)">AutoStop (按需单价) ↕</th>
+                    <th onclick="sortTable(7)">按选定时长估算月费 ↕</th>
+                    <th>盈亏平衡点</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- 由 JS 动态渲染 -->
+            </tbody>
+        </table>
+    </div>
+
+    <div class="notes">
+        <strong>计费与选型说明：</strong>
+        <ul>
+            <li><strong>存储包含说明</strong>：上述 AlwaysOn 与 AutoStop 的月基础费均已包含表格中列出的默认 Root Volume 和 User Volume 存储费用，Ubuntu 系统无需额外支付 OS 许可证费用。</li>
+            <li><strong>盈亏平衡点</strong>：指每月使用多少小时后，<code>AutoStop</code> 总费用会超过 <code>AlwaysOn</code> 包月费用。一般而言，每周工作 5 天、每天使用超过 12 小时（约 265~285 小时/月）建议选 AlwaysOn；常规 8 小时工作制（约 160~176 小时/月）选择 AutoStop 可节省约 30%~40% 成本。</li>
+            <li><strong>特别提示 (GraphicsPro.g4dn)</strong>：AWS 在推出 G6 系列后，<code>GraphicsPro.g4dn</code> 在部分区域和 Core 计费表中的按需小时费率较高（$8.88/hr），同等预算下强烈建议优先选择性能翻倍且显存更大（24GB vs 16GB）的 <code>Graphics.g6.4xlarge</code>。</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+    const workspaceData = [
+        {
+            name: "Graphics.g6f.large",
+            series: "g6f",
+            seriesLabel: "G6f 切分型",
+            vcpu: 2,
+            ram: 8,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1/8 × NVIDIA L4 (3 GiB VRAM)",
+            storage: "100 GB / 100 GB",
+            alwaysOn: 118.00,
+            autoStopBase: 20.00,
+            autoStopHourly: 0.40
+        },
+        {
+            name: "Graphics.g6f.xlarge",
+            series: "g6f",
+            seriesLabel: "G6f 切分型",
+            vcpu: 4,
+            ram: 16,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1/8 × NVIDIA L4 (3 GiB VRAM)",
+            storage: "100 GB / 100 GB",
+            alwaysOn: 139.00,
+            autoStopBase: 20.00,
+            autoStopHourly: 0.48
+        },
+        {
+            name: "Graphics.g6f.2xlarge",
+            series: "g6f",
+            seriesLabel: "G6f 切分型",
+            vcpu: 8,
+            ram: 32,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1/4 × NVIDIA L4 (6 GiB VRAM)",
+            storage: "150 GB / 100 GB",
+            alwaysOn: 277.00,
+            autoStopBase: 25.00,
+            autoStopHourly: 0.95
+        },
+        {
+            name: "Graphics.g6f.4xlarge",
+            series: "g6f",
+            seriesLabel: "G6f 切分型",
+            vcpu: 16,
+            ram: 64,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1/2 × NVIDIA L4 (12 GiB VRAM)",
+            storage: "200 GB / 150 GB",
+            alwaysOn: 555.00,
+            autoStopBase: 30.00,
+            autoStopHourly: 1.90
+        },
+        {
+            name: "Graphics.gr6f.4xlarge",
+            series: "g6f",
+            seriesLabel: "Gr6f 高内存切分型",
+            vcpu: 16,
+            ram: 128,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1/2 × NVIDIA L4 (12 GiB VRAM)",
+            storage: "250 GB / 200 GB",
+            alwaysOn: 623.00,
+            autoStopBase: 35.00,
+            autoStopHourly: 2.13
+        },
+        {
+            name: "Graphics.g6.xlarge",
+            series: "g6",
+            seriesLabel: "G6 整卡型",
+            vcpu: 4,
+            ram: 16,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1 × NVIDIA L4 (24 GiB VRAM)",
+            storage: "100 GB / 100 GB",
+            alwaysOn: 470.00,
+            autoStopBase: 20.00,
+            autoStopHourly: 1.61
+        },
+        {
+            name: "Graphics.g6.2xlarge",
+            series: "g6",
+            seriesLabel: "G6 整卡型",
+            vcpu: 8,
+            ram: 32,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1 × NVIDIA L4 (24 GiB VRAM)",
+            storage: "150 GB / 100 GB",
+            alwaysOn: 571.00,
+            autoStopBase: 25.00,
+            autoStopHourly: 1.96
+        },
+        {
+            name: "Graphics.g6.4xlarge",
+            series: "g6",
+            seriesLabel: "G6 整卡型",
+            vcpu: 16,
+            ram: 64,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1 × NVIDIA L4 (24 GiB VRAM)",
+            storage: "200 GB / 150 GB",
+            alwaysOn: 773.00,
+            autoStopBase: 30.00,
+            autoStopHourly: 2.65
+        },
+        {
+            name: "Graphics.g6.8xlarge",
+            series: "g6",
+            seriesLabel: "G6 整卡型",
+            vcpu: 32,
+            ram: 128,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1 × NVIDIA L4 (24 GiB VRAM)",
+            storage: "250 GB / 200 GB",
+            alwaysOn: 1176.00,
+            autoStopBase: 35.00,
+            autoStopHourly: 4.03
+        },
+        {
+            name: "Graphics.g6.16xlarge",
+            series: "g6",
+            seriesLabel: "G6 整卡型",
+            vcpu: 64,
+            ram: 256,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1 × NVIDIA L4 (24 GiB VRAM)",
+            storage: "300 GB / 200 GB",
+            alwaysOn: 1984.00,
+            autoStopBase: 45.00,
+            autoStopHourly: 6.80
+        },
+        {
+            name: "Graphics.gr6.4xlarge",
+            series: "gr6",
+            seriesLabel: "Gr6 高内存整卡型",
+            vcpu: 16,
+            ram: 128,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1 × NVIDIA L4 (24 GiB VRAM)",
+            storage: "250 GB / 200 GB",
+            alwaysOn: 899.00,
+            autoStopBase: 35.00,
+            autoStopHourly: 3.08
+        },
+        {
+            name: "Graphics.gr6.8xlarge",
+            series: "gr6",
+            seriesLabel: "Gr6 高内存整卡型",
+            vcpu: 32,
+            ram: 256,
+            cpuModel: "AMD EPYC 7R13 (2.6 GHz)",
+            gpuModel: "1 × NVIDIA L4 (24 GiB VRAM)",
+            storage: "300 GB / 200 GB",
+            alwaysOn: 1429.00,
+            autoStopBase: 45.00,
+            autoStopHourly: 4.90
+        },
+        {
+            name: "GraphicsPro.g4dn",
+            series: "g4dn",
+            seriesLabel: "G4dn 上一代旗舰",
+            vcpu: 16,
+            ram: 64,
+            cpuModel: "Intel Xeon P-8259CL (2.5 GHz)",
+            gpuModel: "1 × NVIDIA T4 (16 GiB VRAM) + 225GB NVMe",
+            storage: "100 GB / 100 GB",
+            alwaysOn: 764.00,
+            autoStopBase: 52.80,
+            autoStopHourly: 8.88
+        }
+    ];
+
+    let currentFilter = 'all';
+    let currentHours = 160;
+    let sortDirection = 1;
+
+    const tableBody = document.getElementById('tableBody');
+    const hoursSlider = document.getElementById('hoursSlider');
+    const hoursValue = document.getElementById('hoursValue');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+
+    function renderTable() {
+        tableBody.innerHTML = '';
+        const filtered = workspaceData.filter(item => {
+            if (currentFilter === 'all') return true;
+            return item.series === currentFilter;
+        });
+
+        filtered.forEach(item => {
+            const estimatedAutoStop = item.autoStopBase + (item.autoStopHourly * currentHours);
+            const breakEven = Math.round((item.alwaysOn - item.autoStopBase) / item.autoStopHourly);
+            const isAutoStopCheaper = estimatedAutoStop < item.alwaysOn;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>
+                    <span class="bundle-name">${item.name}</span>
+                    <span class="series-tag tag-${item.series}">${item.seriesLabel}</span>
+                </td>
+                <td>
+                    <strong>${item.vcpu} vCPU</strong><br>
+                    <span class="price-sub">${item.ram} GiB RAM (1:${item.ram / item.vcpu})</span>
+                </td>
+                <td class="cpu-spec">${item.cpuModel}</td>
+                <td class="gpu-spec">${item.gpuModel}</td>
+                <td>${item.storage}</td>
+                <td>
+                    <span class="price-main">$${item.alwaysOn.toFixed(2)}</span>
+                    <span class="price-sub">/ 月 (不限时长)</span>
+                    ${!isAutoStopCheaper ? '<span class="winner-badge">当前时长更省钱</span>' : ''}
+                </td>
+                <td>
+                    <span class="price-main">$${item.autoStopBase.toFixed(2)}</span> <span class="price-sub" style="display:inline">/ 月基础费</span><br>
+                    <span class="price-main">+ $${item.autoStopHourly.toFixed(2)}</span> <span class="price-sub" style="display:inline">/ 小时</span>
+                </td>
+                <td>
+                    <span class="price-main" style="color: ${isAutoStopCheaper ? '#1d8102' : '#545b64'}">$${estimatedAutoStop.toFixed(2)}</span>
+                    <span class="price-sub">按 ${currentHours} 小时/月计</span>
+                    ${isAutoStopCheaper ? '<span class="winner-badge">比包月省 $' + (item.alwaysOn - estimatedAutoStop).toFixed(2) + '</span>' : ''}
+                </td>
+                <td>
+                    <strong>${breakEven} 小时</strong>
+                    <span class="price-sub">约 ${(breakEven / 22).toFixed(1)} 小时/工作日</span>
+                </td>
+            `;
+            tableBody.appendChild(tr);
+        });
+    }
+
+    hoursSlider.addEventListener('input', (e) => {
+        currentHours = parseInt(e.target.value, 10);
+        hoursValue.textContent = `${currentHours} 小时/月`;
+        renderTable();
+    });
+
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentFilter = btn.dataset.filter;
+            renderTable();
+        });
+    });
+
+    function sortTable(colIndex) {
+        sortDirection *= -1;
+        workspaceData.sort((a, b) => {
+            let valA, valB;
+            if (colIndex === 0) { valA = a.name; valB = b.name; }
+            else if (colIndex === 1) { valA = a.vcpu * 1000 + a.ram; valB = b.vcpu * 1000 + b.ram; }
+            else if (colIndex === 5) { valA = a.alwaysOn; valB = b.alwaysOn; }
+            else if (colIndex === 6) { valA = a.autoStopHourly; valB = b.autoStopHourly; }
+            else if (colIndex === 7) {
+                valA = a.autoStopBase + a.autoStopHourly * currentHours;
+                valB = b.autoStopBase + b.autoStopHourly * currentHours;
+            }
+            if (valA < valB) return -1 * sortDirection;
+            if (valA > valB) return 1 * sortDirection;
+            return 0;
+        });
+        renderTable();
+    }
+
+    // 初始渲染
+    renderTable();
+</script>
+
+</body>
+</html>
